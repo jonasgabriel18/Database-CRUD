@@ -26,19 +26,46 @@ class ClientManager:
         print("6: Show available personal trainers")
         print("7: Show gyms")
     
-    def show_all_gyms(self):
+    def show_all(self, table):
         conn = self.connect()
         if not conn:
             return None
 
         cur = conn.cursor()
-        cur.execute("SELECT * FROM gym")
+        cur.execute(f"SELECT * FROM {table}")
         rows = cur.fetchall()
         for row in rows:
             print(row)
         
         cur.close()
         conn.close()
+    
+    def register_client(self):
+        conn = self.connect()
+        if not conn:
+            return None
+
+        cur = conn.cursor()
+
+        name = input('Insira seu nome: ')
+        age = int(input('Insira sua idade: '))
+        weight = int(input('Insira seu peso (em kg): '))
+        height = int(input('Insira sua altura (em cm): '))
+
+        insert_query = """ INSERT INTO clients(client_name, age, weight, height) VALUES (%s,%s,%s,%s)"""
+        inserted_values = (name, age, weight, height)
+
+        try:
+            cur.execute(insert_query, inserted_values)
+            conn.commit()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            print('Cliente registrado com sucesso!')
+            cur.close()
+            conn.close()
+
 
 manager = ClientManager()
-manager.show_all_gyms()
+manager.show_all('clients')
+#manager.register_client()
