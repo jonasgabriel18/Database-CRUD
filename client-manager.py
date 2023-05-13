@@ -92,11 +92,14 @@ class ClientManager:
             if not client:
                 print('Não foi encontrado nenhum cliente registrado com esse nome.')
                 return None
-            elif len(client) > 1:
-                print('Foi encontrado mais de um cliente com esse nome')
-                return None
+            
             client_id = client[0][0]
+            client_appointment = client[0][6]
+            if client_appointment is None:
+                client_appointment = dict()
+            
             self.show_all('personals')
+
             personal_name = input('Digite o nome do personal trainer de sua escolha: ')
             find_personal_query = f"SELECT * FROM personals WHERE personal_name='{personal_name}'"
             cur.execute(find_personal_query)
@@ -104,9 +107,6 @@ class ClientManager:
 
             if not personal:
                 print('Não foi encontrado nenhum personal trainer registrado com esse nome.')
-                return None
-            elif len(personal) > 1:
-                print('Foi encontrado mais de um personal trainer com esse nome!')
                 return None
             
             personal_id = personal[0][0]
@@ -117,24 +117,22 @@ class ClientManager:
                     if availability:
                         available_schedule[key] = personal_schedule[key]
             
-            print("\nEscolha um dia da semana\n:")
-            print('''
-            1: Segunda-feira
-            2: Terça-feira
-            3: Quarta-feira
-            4: Quinta-feira
-            5: Sexta-feira
-            6: Sábado
-            ''')
+            day = int(input("\nEscolha um dia da semana: "))
+            print("""1: Segunda-feira
+                    2: Terça-feira
+                    3: Quarta-feira
+                    4: Quinta-feira
+                    5: Sexta-feira
+                    6: Sábado
+                    """)
+                    
+            day = correlate_day(day) #Transforma o dia em 1, 2, 3...
 
-            day = int(input())
-            day = correlate_day(day)
-
-            print("\nEscolha um horario livre: ")
-            print(available_schedule[day])
+            print("Escolha um horario livre: ")
+            
             free_time = list(available_schedule[day].keys())
             for i in range(len(free_time)):
-                print(f"{i}: {free_time[i]}")
+                print(f"{i}: {free_time[i]}\n")
             
             time = int(input())
             time = free_time[time]
@@ -144,9 +142,10 @@ class ClientManager:
             update_personal_query = "UPDATE personals SET schedule = %s, client_id = %s WHERE personal_id = %s"
             cur.execute(update_personal_query, (personal_schedule, client_id, personal_id))
 
-            time_string = f"{time[:2]}:00:00"
+            client_appointment[day] = f"{time[:2]}:00:00"
+            client_appointment = json.dumps(client_appointment)
             update_client_query = "UPDATE clients SET personal_id = %s, appointment = %s WHERE client_id = %s"
-            cur.execute(update_client_query, (personal_id, time_string, client_id))
+            cur.execute(update_client_query, (personal_id, client_appointment, client_id))
 
             conn.commit()
 
@@ -158,6 +157,6 @@ class ClientManager:
             conn.close()
 
 manager = ClientManager()
-#manager.show_all('gym')
+#manager.show_all('clients')
 #manager.register_client()
 manager.make_appointment()
