@@ -70,7 +70,7 @@ class ClientManager:
             cur.close()
             conn.close()
 
-            return rows[0][0]
+            return rows[0]
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             cur.close()
@@ -109,9 +109,10 @@ class ClientManager:
         cur = conn.cursor()
 
         try:
-            client_id = self.show_one_client()
-            if client_id is None:
+            client = self.show_one_client()
+            if client is None:
                 raise Exception("Id do client retornou vazio")
+            client_id = client[0]
             
             column_to_update = input("Digite a coluna que voce deseja alterar: ")
             new_value = input("Digite o novo valor dessa coluna: ")
@@ -135,25 +136,26 @@ class ClientManager:
             return None
         
         cur = conn.cursor()
-        client_name = input('Insira seu nome: ')
+        #client_name = input('Insira seu nome: ')
 
         try:
-            find_client_query = f"SELECT * FROM clients WHERE client_name='{client_name}'"
-            cur.execute(find_client_query)
-            client = cur.fetchall()
+            #find_client_query = f"SELECT * FROM clients WHERE client_name='{client_name}'"
+            #cur.execute(find_client_query)
+            client = self.show_one_client()
 
             if not client:
                 print('Não foi encontrado nenhum cliente registrado com esse nome.')
                 return None
             
-            client_id = client[0][0]
-            client_appointment = client[0][6]
+            client_id = client[0]
+            client_appointment = client[6]
             if client_appointment is None:
                 client_appointment = dict()
             
+            print()
             self.show_all('personals')
 
-            personal_name = input('Digite o nome do personal trainer de sua escolha: ')
+            personal_name = input('\nDigite o nome do personal trainer de sua escolha: ')
             find_personal_query = f"SELECT * FROM personals WHERE personal_name='{personal_name}'"
             cur.execute(find_personal_query)
             personal = cur.fetchall()
@@ -164,25 +166,22 @@ class ClientManager:
             
             personal_id = personal[0][0]
             personal_schedule = personal[0][5]
-            available_schedule = dict.fromkeys(personal_schedule.keys())
-            for key in personal_schedule:
-                for _, availability in personal_schedule[key].items():
+
+            available_schedule = {}
+            for key, value in personal_schedule.items():
+                available_schedule[key] = {}
+                for time, availability in value.items():
                     if availability:
-                        available_schedule[key] = personal_schedule[key]
+                        available_schedule[key][time] = True
+            
+            print("1: Segunda-feira\n2: Terça-feira\n3: Quarta-feira\n4: Quinta-feira\n5: Sexta-feira\n6: Sábado")
             
             day = int(input("\nEscolha um dia da semana: "))
-            print("""1: Segunda-feira
-                    2: Terça-feira
-                    3: Quarta-feira
-                    4: Quinta-feira
-                    5: Sexta-feira
-                    6: Sábado
-                    """)
-                    
             day = correlate_day(day) #Transforma o dia em 1, 2, 3...
 
             print("Escolha um horario livre: ")
             
+            print(available_schedule)
             free_time = list(available_schedule[day].keys())
             for i in range(len(free_time)):
                 print(f"{i}: {free_time[i]}\n")
@@ -212,5 +211,5 @@ class ClientManager:
 manager = ClientManager()
 #manager.show_all('clients')
 #manager.register_client()
-#manager.make_appointment()
-manager.update_client_register()
+manager.make_appointment()
+#manager.update_client_register()
