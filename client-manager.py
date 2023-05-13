@@ -51,6 +51,31 @@ class ClientManager:
         cur.close()
         conn.close()
     
+    def show_one_client(self):
+        conn = self.connect()
+        if not conn:
+            return None
+        
+        cur = conn.cursor()
+        client_name = input("Insira seu nome: ")
+
+        try:
+            select_client_query = f"SELECT * FROM clients WHERE client_name = '{client_name}'"
+            cur.execute(select_client_query)
+            rows = cur.fetchall()
+
+            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'appointment']).set_index('id')
+            print(df)
+
+            cur.close()
+            conn.close()
+
+            return rows[0][0]
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            cur.close()
+            conn.close()
+            
     def register_client(self):
         conn = self.connect()
         if not conn:
@@ -70,6 +95,34 @@ class ClientManager:
             cur.execute(insert_query, inserted_values)
             conn.commit()
             print('Cliente registrado com sucesso!')
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
+    
+    def update_client_register(self):
+        conn = self.connect()
+        if not conn:
+            return None
+        
+        cur = conn.cursor()
+
+        try:
+            client_id = self.show_one_client()
+            if client_id is None:
+                raise Exception("Id do client retornou vazio")
+            
+            column_to_update = input("Digite a coluna que voce deseja alterar: ")
+            new_value = input("Digite o novo valor dessa coluna: ")
+
+            if column_to_update in ["age", "weight", "height"]:
+                new_value = int(new_value)
+            
+            update_client_query = f"UPDATE clients SET {column_to_update} = {new_value} WHERE client_id = {client_id}"
+            cur.execute(update_client_query)
+            conn.commit()
+            print('Informações de cadastro atualizadas com sucesso!')
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
@@ -159,4 +212,5 @@ class ClientManager:
 manager = ClientManager()
 #manager.show_all('clients')
 #manager.register_client()
-manager.make_appointment()
+#manager.make_appointment()
+manager.update_client_register()
