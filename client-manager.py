@@ -35,21 +35,24 @@ class ClientManager:
             return None
 
         cur = conn.cursor()
-        cur.execute(f"SELECT * FROM {table}")
-        rows = cur.fetchall()
-        
-        if table == 'clients':
-            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'appointment']).set_index('id')
-            print(df)
-        elif table == 'gym':
-            df = pd.DataFrame(rows, columns=['id', 'name', 'address', 'opening_time', 'closing_time', 'fee']).set_index('id')
-            print(df)
-        elif table == 'personals':
-            df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'linked_gym', 'client_id', 'schedule', 'age', 'height', 'weight']).set_index('id')
-            print(df)
-        
-        cur.close()
-        conn.close()
+        try:
+            cur.execute(f"SELECT * FROM {table}")
+            rows = cur.fetchall()
+            
+            if table == 'clients':
+                df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'appointment']).set_index('id')
+                print(df)
+            elif table == 'gym':
+                df = pd.DataFrame(rows, columns=['id', 'name', 'address', 'opening_time', 'closing_time', 'fee']).set_index('id')
+                print(df)
+            elif table == 'personals':
+                df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'linked_gym', 'client_id', 'schedule', 'age', 'height', 'weight']).set_index('id')
+                print(df)
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
     
     def show_one_client(self):
         conn = self.connect()
@@ -149,15 +152,22 @@ class ClientManager:
             
             client_id = client[0]
             client_appointment = client[6]
+            registered_personal_id = client[5]
+
             if client_appointment is None:
                 client_appointment = dict()
             
             print()
-            self.show_all('personals')
+            if not registered_personal_id:
+                self.show_all('personals')
 
-            personal_name = input('\nDigite o nome do personal trainer de sua escolha: ')
-            find_personal_query = f"SELECT * FROM personals WHERE personal_name='{personal_name}'"
-            cur.execute(find_personal_query)
+                personal_name = input('\nDigite o nome do personal trainer de sua escolha: ')
+                find_personal_query = f"SELECT * FROM personals WHERE personal_name='{personal_name}'"
+                cur.execute(find_personal_query)
+            else:
+                find_personal_query = f"SELECT * FROM personals WHERE personal_id='{registered_personal_id}'"
+                cur.execute(find_personal_query)
+
             personal = cur.fetchall()
 
             if not personal:
@@ -181,7 +191,7 @@ class ClientManager:
 
             print("Escolha um horario livre: ")
             
-            print(available_schedule)
+            #print(available_schedule)
             free_time = list(available_schedule[day].keys())
             for i in range(len(free_time)):
                 print(f"{i}: {free_time[i]}\n")
