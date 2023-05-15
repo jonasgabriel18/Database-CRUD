@@ -1,7 +1,7 @@
 import psycopg2
 import pandas as pd
 import json
-from utils import correlate_day
+from utils import correlate_day, cls
 
 class ClientManager:
 
@@ -21,13 +21,18 @@ class ClientManager:
             return None
     
     def display_menu(self):
+        print()
         print("1: Show clients")
-        print("2: Register new client")
-        print("3: Update client")
-        print("4: Delete client")
-        print("5: Show client workout")
-        print("6: Show available personal trainers")
-        print("7: Show gyms")
+        print("2: Show one client")
+        print("3: Register new client")
+        print("4: Schedule a workout")
+        print("5: Update client")
+        print("6: Delete client")
+        print("7: Show client workout")
+        print("8: Show available personal trainers")
+        print("9: Show gyms")
+        print("0: Leave")
+        print()
     
     def show_all(self, table):
         conn = self.connect()
@@ -61,6 +66,7 @@ class ClientManager:
         
         cur = conn.cursor()
         client_name = input("Insira seu nome: ")
+        print()
 
         try:
             select_client_query = f"SELECT * FROM clients WHERE client_name = '{client_name}'"
@@ -90,6 +96,7 @@ class ClientManager:
         age = int(input('Insira sua idade: '))
         weight = int(input('Insira seu peso (em kg): '))
         height = int(input('Insira sua altura (em cm): '))
+        print()
 
         insert_query = """ INSERT INTO clients(client_name, age, weight, height) VALUES (%s,%s,%s,%s)"""
         inserted_values = (name, age, weight, height)
@@ -139,11 +146,8 @@ class ClientManager:
             return None
         
         cur = conn.cursor()
-        #client_name = input('Insira seu nome: ')
 
         try:
-            #find_client_query = f"SELECT * FROM clients WHERE client_name='{client_name}'"
-            #cur.execute(find_client_query)
             client = self.show_one_client()
 
             if not client:
@@ -191,7 +195,6 @@ class ClientManager:
 
             print("Escolha um horario livre: ")
             
-            #print(available_schedule)
             free_time = list(available_schedule[day].keys())
             for i in range(len(free_time)):
                 print(f"{i}: {free_time[i]}\n")
@@ -218,8 +221,34 @@ class ClientManager:
             cur.close()
             conn.close()
 
-manager = ClientManager()
-#manager.show_all('clients')
-#manager.register_client()
-manager.make_appointment()
-#manager.update_client_register()
+if __name__ == '__main__':
+    manager = ClientManager()
+
+    while True:
+        manager.display_menu()
+        choice = int(input("Choose a option: "))
+        print()
+        if choice == 1:
+            manager.show_all('clients')
+        elif choice == 2:
+            manager.show_one_client()
+        elif choice == 3:
+            manager.register_client()
+        elif choice == 4:
+            manager.make_appointment()
+        elif choice == 5:
+            manager.update_client_register()
+        elif choice == 6:
+            print('ops')
+            #manager.delete_client()
+        elif choice == 7:
+            print('ops')
+            #manager.show_client_workout()
+        elif choice == 8:
+            manager.show_all('personals')
+        elif choice == 9:
+            manager.show_all('gym')
+        elif choice == 0:
+            break
+        else:
+            print('Invalid option')

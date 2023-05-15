@@ -1,3 +1,5 @@
+import os
+
 def correlate_day(day):
     if day == 1:
         return "segunda-feira"
@@ -11,3 +13,6 @@ def correlate_day(day):
         return "sexta-feira"
     if day == 6:
         return "sabado"
+
+def cls():
+    os.system('cls' if os.name=='nt' else 'clear')
