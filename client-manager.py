@@ -22,16 +22,16 @@ class ClientManager:
     
     def display_menu(self):
         print()
-        print("1: Show clients")
-        print("2: Show one client")
-        print("3: Register new client")
-        print("4: Schedule a workout")
-        print("5: Update client")
-        print("6: Delete client")
-        print("7: Show client workout")
-        print("8: Show available personal trainers")
-        print("9: Show gyms")
-        print("0: Leave")
+        print("1: Mostrar clientes")
+        print("2: Mostrar um cliente")
+        print("3: Registrar novo cliente")
+        print("4: Agende um treino")
+        print("5: Atualizar cliente")
+        print("6: Excluir cliente")
+        print("7: Mostrar treino do cliente")
+        print("8: Mostrar personal trainers disponíveis")
+        print("9: Mostrar academias")
+        print("0: Sair")
         print()
     
     def show_all(self, table):
@@ -65,7 +65,7 @@ class ClientManager:
             return None
         
         cur = conn.cursor()
-        client_name = input("Insira seu nome: ")
+        client_name = input("Digite seu nome: ")
         print()
 
         try:
@@ -92,10 +92,10 @@ class ClientManager:
 
         cur = conn.cursor()
 
-        name = input('Insira seu nome: ')
-        age = int(input('Insira sua idade: '))
-        weight = int(input('Insira seu peso (em kg): '))
-        height = int(input('Insira sua altura (em cm): '))
+        name = input('Digite seu nome: ')
+        age = int(input('Digite sua idade: '))
+        weight = int(input('Digite seu peso (em kg): '))
+        height = int(input('Digite sua altura (em cm): '))
         print()
 
         insert_query = """ INSERT INTO clients(client_name, age, weight, height) VALUES (%s,%s,%s,%s)"""
@@ -104,7 +104,7 @@ class ClientManager:
         try:
             cur.execute(insert_query, inserted_values)
             conn.commit()
-            print('Cliente registrado com sucesso!')
+            print('Cliente cadastrado com sucesso!')
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
@@ -121,11 +121,11 @@ class ClientManager:
         try:
             client = self.show_one_client()
             if client is None:
-                raise Exception("Id do client retornou vazio")
+                raise Exception("ID do cliente retornou vazio")
             client_id = client[0]
             
-            column_to_update = input("Digite a coluna que voce deseja alterar: ")
-            new_value = input("Digite o novo valor dessa coluna: ")
+            column_to_update = input("Digite a coluna que deseja alterar: ")
+            new_value = input("Digite seu novo valor: ")
 
             if column_to_update in ["age", "weight", "height"]:
                 new_value = int(new_value)
@@ -133,7 +133,32 @@ class ClientManager:
             update_client_query = f"UPDATE clients SET {column_to_update} = {new_value} WHERE client_id = {client_id}"
             cur.execute(update_client_query)
             conn.commit()
-            print('Informações de cadastro atualizadas com sucesso!')
+            print('Informações cadastrais atualizadas com sucesso!')
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
+    
+    def delete_client(self):
+        conn = self.connect()
+        if not conn:
+            return None
+        
+        cur = conn.cursor()
+
+        try:
+            client = self.show_one_client()
+            if client is None:
+                raise Exception("ID do cliente retornou vazio")
+            client_id = client[0]
+
+            delete_query = f"DELETE FROM clients WHERE client_id = {client_id}"
+            cur.execute(delete_query)
+            conn.commit()
+
+            print()
+            print('Cadastro de cliente deletado com sucesso!')
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
@@ -151,7 +176,7 @@ class ClientManager:
             client = self.show_one_client()
 
             if not client:
-                print('Não foi encontrado nenhum cliente registrado com esse nome.')
+                print('Nenhum cliente cadastrado com esse nome foi encontrado')
                 return None
             
             client_id = client[0]
@@ -175,7 +200,7 @@ class ClientManager:
             personal = cur.fetchall()
 
             if not personal:
-                print('Não foi encontrado nenhum personal trainer registrado com esse nome.')
+                print('Nenhum personal trainer registrado com esse nome foi encontrado')
                 return None
             
             personal_id = personal[0][0]
@@ -226,7 +251,7 @@ if __name__ == '__main__':
 
     while True:
         manager.display_menu()
-        choice = int(input("Choose a option: "))
+        choice = int(input("Escolha uma opção: "))
         print()
         if choice == 1:
             manager.show_all('clients')
@@ -239,8 +264,7 @@ if __name__ == '__main__':
         elif choice == 5:
             manager.update_client_register()
         elif choice == 6:
-            print('ops')
-            #manager.delete_client()
+            manager.delete_client()
         elif choice == 7:
             print('ops')
             #manager.show_client_workout()
@@ -251,4 +275,4 @@ if __name__ == '__main__':
         elif choice == 0:
             break
         else:
-            print('Invalid option')
+            print('Opção inválida')
