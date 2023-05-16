@@ -2,6 +2,7 @@ import psycopg2
 import pandas as pd
 import json
 from utils import correlate_day, cls
+#jonas é legal
 
 class ClientManager:
 
