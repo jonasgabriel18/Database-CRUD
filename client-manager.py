@@ -45,7 +45,7 @@ class ClientManager:
             rows = cur.fetchall()
             
             if table == 'clients':
-                df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'appointment']).set_index('id')
+                df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'appointment', 'gym']).set_index('id')
                 print(df)
             elif table == 'gym':
                 df = pd.DataFrame(rows, columns=['id', 'name', 'address', 'opening_time', 'closing_time', 'fee']).set_index('id')
@@ -73,7 +73,7 @@ class ClientManager:
             cur.execute(select_client_query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'appointment']).set_index('id')
+            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'appointment', 'gym']).set_index('id')
             print(df)
 
             cur.close()
@@ -205,6 +205,7 @@ class ClientManager:
             
             personal_id = personal[0][0]
             personal_schedule = personal[0][5]
+            personal_gym = personal[0][3]
 
             available_schedule = {}
             for key, value in personal_schedule.items():
@@ -234,8 +235,8 @@ class ClientManager:
 
             client_appointment[day] = f"{time[:2]}:00:00"
             client_appointment = json.dumps(client_appointment)
-            update_client_query = "UPDATE clients SET personal_id = %s, appointment = %s WHERE client_id = %s"
-            cur.execute(update_client_query, (personal_id, client_appointment, client_id))
+            update_client_query = "UPDATE clients SET personal_id = %s, appointment = %s, gym_id = %s WHERE client_id = %s"
+            cur.execute(update_client_query, (personal_id, client_appointment, personal_gym, client_id))
 
             conn.commit()
 
