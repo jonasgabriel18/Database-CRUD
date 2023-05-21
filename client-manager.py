@@ -2,7 +2,6 @@ import psycopg2
 import pandas as pd
 import json
 from utils import correlate_day, cls
-#jonas é legal
 
 class ClientManager:
 
@@ -10,7 +9,7 @@ class ClientManager:
         try:
             conn = psycopg2.connect(
                 host='localhost',
-                database='crud',
+                database='personals-db',
                 user='postgres',
                 password='220918',
                 port='5432'
@@ -46,13 +45,13 @@ class ClientManager:
             rows = cur.fetchall()
             
             if table == 'clients':
-                df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'appointment', 'gym']).set_index('id')
+                df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym']).set_index('id')
                 print(df)
             elif table == 'gym':
                 df = pd.DataFrame(rows, columns=['id', 'name', 'address', 'opening_time', 'closing_time', 'fee']).set_index('id')
                 print(df)
             elif table == 'personals':
-                df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'linked_gym', 'client_id', 'schedule', 'age', 'height', 'weight']).set_index('id')
+                df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'age', 'height', 'weight', 'gym_id']).set_index('id')
                 print(df)
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
@@ -74,7 +73,7 @@ class ClientManager:
             cur.execute(select_client_query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'appointment', 'gym']).set_index('id')
+            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym']).set_index('id')
             print(df)
 
             cur.close()
@@ -125,6 +124,7 @@ class ClientManager:
                 raise Exception("ID do cliente retornou vazio")
             client_id = client[0]
             
+            print()
             column_to_update = input("Digite a coluna que deseja alterar: ")
             new_value = input("Digite seu novo valor: ")
 
@@ -134,6 +134,7 @@ class ClientManager:
             update_client_query = f"UPDATE clients SET {column_to_update} = {new_value} WHERE client_id = {client_id}"
             cur.execute(update_client_query)
             conn.commit()
+            print()
             print('Informações cadastrais atualizadas com sucesso!')
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
@@ -181,12 +182,8 @@ class ClientManager:
                 return None
             
             client_id = client[0]
-            client_appointment = client[6]
             registered_personal_id = client[5]
 
-            if client_appointment is None:
-                client_appointment = dict()
-            
             print()
             if not registered_personal_id:
                 self.show_all('personals')
@@ -200,44 +197,37 @@ class ClientManager:
 
             personal = cur.fetchall()
 
-            if not personal:
-                print('Nenhum personal trainer registrado com esse nome foi encontrado')
-                return None
+            #if not personal:
+                #print('Nenhum personal trainer registrado com esse nome foi encontrado')
+                #return None
             
             personal_id = personal[0][0]
-            personal_schedule = personal[0][5]
-            personal_gym = personal[0][3]
-
-            available_schedule = {}
-            for key, value in personal_schedule.items():
-                available_schedule[key] = {}
-                for time, availability in value.items():
-                    if availability:
-                        available_schedule[key][time] = True
+            personal_gym = personal[0][6]
             
-            print("1: Segunda-feira\n2: Terça-feira\n3: Quarta-feira\n4: Quinta-feira\n5: Sexta-feira\n6: Sábado")
+            get_available_schedule_query = f"SELECT * FROM personals_schedules WHERE personal_id='{personal_id}' AND is_available = true;"
+            cur.execute(get_available_schedule_query)
+            available_schedule = cur.fetchall()
             
-            day = int(input("\nEscolha um dia da semana: "))
-            day = correlate_day(day) #Transforma o dia em 1, 2, 3...
-
-            print("Escolha um horario livre: ")
+            df_schedule = pd.DataFrame(available_schedule, columns=['id', 'time', 'day', 'availability', 'personal_id'])
+            df_schedule.drop(['id', 'availability', 'personal_id'], axis=1, inplace=True)
+            print()
+            print(df_schedule)
             
-            free_time = list(available_schedule[day].keys())
-            for i in range(len(free_time)):
-                print(f"{i}: {free_time[i]}\n")
+            print()
+            index = int(input('Selecione o índice do horário que voce deseja marcar: '))
+            selected_appointment = available_schedule[index]
+            #appointment_id = selected_appointment[3]
+
+            update_personal_query = f"UPDATE personals_schedules SET is_available = false WHERE schedule_id = {selected_appointment[0]}"
+            cur.execute(update_personal_query)
+
+            insert_client_appointment = "INSERT INTO clients_appointment (client_id, appointment_time, appointment_day) VALUES(%s, %s, %s)"
+            cur.execute(insert_client_appointment, (client_id, selected_appointment[1], selected_appointment[2]))
             
-            time = int(input())
-            time = free_time[time]
-            personal_schedule[day][time] = False
-            personal_schedule = json.dumps(personal_schedule)
+            ###FALTA DAR INSERT NA TABELA DE RELACIONAMENTO WORKOUT
 
-            update_personal_query = "UPDATE personals SET schedule = %s, client_id = %s WHERE personal_id = %s"
-            cur.execute(update_personal_query, (personal_schedule, client_id, personal_id))
-
-            client_appointment[day] = f"{time[:2]}:00:00"
-            client_appointment = json.dumps(client_appointment)
-            update_client_query = "UPDATE clients SET personal_id = %s, appointment = %s, gym_id = %s WHERE client_id = %s"
-            cur.execute(update_client_query, (personal_id, client_appointment, personal_gym, client_id))
+            update_client_query = "UPDATE clients SET personal_id = %s, gym_id = %s WHERE client_id = %s"
+            cur.execute(update_client_query, (personal_id, personal_gym, client_id))
 
             conn.commit()
 
