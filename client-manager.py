@@ -59,7 +59,7 @@ class ClientManager:
             cur.close()
             conn.close()
     
-    def show_one_client(self):
+    def show_one_client(self, show=True):
         conn = self.connect()
         if not conn:
             return None
@@ -73,8 +73,9 @@ class ClientManager:
             cur.execute(select_client_query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym']).set_index('id')
-            print(df)
+            if show:
+                df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym']).set_index('id')
+                print(df)
 
             cur.close()
             conn.close()
@@ -175,7 +176,7 @@ class ClientManager:
         cur = conn.cursor()
 
         try:
-            client = self.show_one_client()
+            client = self.show_one_client(False)
 
             if not client:
                 print('Nenhum cliente cadastrado com esse nome foi encontrado')
@@ -216,15 +217,12 @@ class ClientManager:
             print()
             index = int(input('Selecione o índice do horário que voce deseja marcar: '))
             selected_appointment = available_schedule[index]
-            #appointment_id = selected_appointment[3]
 
             update_personal_query = f"UPDATE personals_schedules SET is_available = false WHERE schedule_id = {selected_appointment[0]}"
             cur.execute(update_personal_query)
 
             insert_client_appointment = "INSERT INTO clients_appointment (client_id, appointment_time, appointment_day) VALUES(%s, %s, %s)"
             cur.execute(insert_client_appointment, (client_id, selected_appointment[1], selected_appointment[2]))
-            
-            ###FALTA DAR INSERT NA TABELA DE RELACIONAMENTO WORKOUT
 
             update_client_query = "UPDATE clients SET personal_id = %s, gym_id = %s WHERE client_id = %s"
             cur.execute(update_client_query, (personal_id, personal_gym, client_id))
@@ -237,6 +235,69 @@ class ClientManager:
         finally:
             cur.close()
             conn.close()
+
+    def display_workout_options(self):
+        print()
+        print("1: Mostrar treino A")
+        print("2: Mostrar treino B")
+        print("3: Mostrar treino C")
+        print("4: Mostrar treino de peitoral")
+        print("5: Mostrar treino de ombro")
+        print("6: Mostrar treino de triceps")
+        print("7: Mostrar treino de costas")
+        print("8: Mostrar treino de biceps")
+        print()
+
+    def show_client_workout(self):
+            conn = self.connect()
+            if not conn:
+                return None
+            
+            cur = conn.cursor()
+
+            try:
+                client = self.show_one_client(False)
+                client_id = client[0]
+                self.display_workout_options()
+                choice = int(input("Selecione uma opção: "))
+                print()
+                base_query = f"""SELECT e.exercise_name, e.number_of_sets, e.repetitions, e.weight, e.muscle_group 
+                               FROM exercises e
+                               JOIN clients c
+                               ON e.client_id = c.client_id
+                               WHERE c.client_id={client_id}"""
+
+                if choice == 1:
+                    query = base_query + " AND e.muscle_group IN ('Peitoral', 'Ombro', 'Triceps');"
+                elif choice == 2:
+                    query = base_query + " AND e.muscle_group IN ('Costas', 'Biceps');"
+                elif choice == 3:
+                    query = base_query + " AND e.muscle_group IN ('Perna');"
+                elif choice == 4:
+                    query = base_query + " AND e.muscle_group IN ('Peitoral');"
+                elif choice == 5:
+                    query = base_query + " AND e.muscle_group IN ('Ombro');"
+                elif choice == 6:
+                    query = base_query + " AND e.muscle_group IN ('Triceps');"
+                elif choice == 7:
+                    query = base_query + " AND e.muscle_group IN ('Costas');"
+                elif choice == 8:
+                    query = base_query + " AND e.muscle_group IN ('Biceps');"
+                else:
+                    raise Exception("Opção não reconhecida")
+
+                cur.execute(query)
+                rows = cur.fetchall()
+
+                df = pd.DataFrame(rows, columns=['Exercicio', 'Séries', 'Repetições', 'Peso', 'Músculo'])
+                print()
+                print(df)
+
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+            finally:
+                cur.close()
+                conn.close()
 
 if __name__ == '__main__':
     manager = ClientManager()
@@ -258,8 +319,7 @@ if __name__ == '__main__':
         elif choice == 6:
             manager.delete_client()
         elif choice == 7:
-            print('ops')
-            #manager.show_client_workout()
+            manager.show_client_workout()
         elif choice == 8:
             manager.show_all('personals')
         elif choice == 9:
