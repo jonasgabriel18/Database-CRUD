@@ -1,5 +1,7 @@
 import psycopg2
 import pandas as pd
+from dotenv import load_dotenv
+import os
 import json
 from utils import correlate_day, cls
 
@@ -7,12 +9,21 @@ class ClientManager:
 
     def connect(self):
         try:
+            load_dotenv()
+            
+            db_host = os.getenv('DB_HOST')
+            db_database = os.getenv('DB_NAME')
+            db_user = os.getenv('DB_USER')
+            db_password = os.getenv('DB_PASSWORD')
+            db_port = os.getenv('DB_PORT')
+            print(db_host)
+
             conn = psycopg2.connect(
-                host='localhost',
-                database='personals-db',
-                user='postgres',
-                password='220918',
-                port='5432'
+                host=db_host,
+                database=db_database,
+                user=db_user,
+                password=db_password,
+                port=db_port
             )   
 
             return conn
