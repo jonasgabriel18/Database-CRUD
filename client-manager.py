@@ -2,8 +2,6 @@ import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
 import os
-import json
-from utils import correlate_day, cls
 
 class ClientManager:
 
@@ -16,7 +14,6 @@ class ClientManager:
             db_user = os.getenv('DB_USER')
             db_password = os.getenv('DB_PASSWORD')
             db_port = os.getenv('DB_PORT')
-            print(db_host)
 
             conn = psycopg2.connect(
                 host=db_host,
@@ -37,11 +34,11 @@ class ClientManager:
         print("2: Mostrar um cliente")
         print("3: Registrar novo cliente")
         print("4: Agende um treino")
-        print("5: Atualizar cliente")
-        print("6: Excluir cliente")
-        print("7: Mostrar treino do cliente")
-        print("8: Mostrar personal trainers disponíveis")
-        print("9: Mostrar academias")
+        print("5: Mostrar agendamentos")
+        print("6: Atualizar cliente")
+        print("7: Excluir cliente")
+        print("8: Mostrar treino do cliente")
+        print("9: Mostrar personal trainers")
         print("0: Sair")
         print()
     
@@ -221,6 +218,10 @@ class ClientManager:
             available_schedule = cur.fetchall()
             
             df_schedule = pd.DataFrame(available_schedule, columns=['id', 'time', 'day', 'availability', 'personal_id'])
+
+            if df_schedule.empty:
+                raise Exception("O personal não possui horários livres")
+            
             df_schedule.drop(['id', 'availability', 'personal_id'], axis=1, inplace=True)
             print()
             print(df_schedule)
@@ -246,6 +247,38 @@ class ClientManager:
         finally:
             cur.close()
             conn.close()
+    
+    def show_appointment(self):
+        conn = self.connect()
+        if not conn:
+            return None
+        
+        cur = conn.cursor()
+
+        try:
+            client = self.show_one_client(False)
+            client_id = client[0]
+
+            query = f"""SELECT c.client_name, p.personal_name, a.appointment_day, a.appointment_time FROM clients c
+                       JOIN personals p
+                       ON c.personal_id = p.personal_id
+                       JOIN clients_appointment a
+                       ON a.client_id = c.client_id
+                       WHERE c.client_id = {client_id}
+                       ORDER BY a.appointment_day, a.appointment_time ASC;"""
+            
+            cur.execute(query)
+            rows = cur.fetchall()
+
+            df = pd.DataFrame(rows, columns=['Aluno', 'Personal', 'Dia', 'Hora'])
+            print(df)
+
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
+
 
     def display_workout_options(self):
         print()
@@ -326,15 +359,15 @@ if __name__ == '__main__':
         elif choice == 4:
             manager.make_appointment()
         elif choice == 5:
-            manager.update_client_register()
+            manager.show_appointment()
         elif choice == 6:
-            manager.delete_client()
+            manager.update_client_register()
         elif choice == 7:
-            manager.show_client_workout()
+            manager.delete_client()
         elif choice == 8:
-            manager.show_all('personals')
+             manager.show_client_workout()
         elif choice == 9:
-            manager.show_all('gym')
+            manager.show_all('personals')
         elif choice == 0:
             break
         else:
