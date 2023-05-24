@@ -42,25 +42,50 @@ class ClientManager:
         print("0: Sair")
         print()
     
-    def show_all(self, table):
+    def show_all_clients(self):
         conn = self.connect()
         if not conn:
             return None
 
         cur = conn.cursor()
+
         try:
-            cur.execute(f"SELECT * FROM {table}")
-            rows = cur.fetchall()
+            select_query = """SELECT c.client_name, c.age, c.weight, c.height, p.personal_name, g.gym_name
+                              FROM clients c
+                              LEFT JOIN personals p
+                              ON c.personal_id = p.personal_id
+                              LEFT JOIN gym g
+                              ON c.gym_id = g.gym_id;"""
             
-            if table == 'clients':
-                df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym']).set_index('id')
-                print(df)
-            elif table == 'gym':
-                df = pd.DataFrame(rows, columns=['id', 'name', 'address', 'opening_time', 'closing_time', 'fee']).set_index('id')
-                print(df)
-            elif table == 'personals':
-                df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'age', 'height', 'weight', 'gym_id']).set_index('id')
-                print(df)
+            cur.execute(select_query)
+            rows = cur.fetchall()
+
+            df = pd.DataFrame(rows, columns=['Nome', 'Idade', 'Peso', 'Altura', 'Personal Trainer', 'Academia'])
+            print(df)
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
+    
+    def show_all_personals(self):
+        conn = self.connect()
+        if not conn:
+            return None
+
+        cur = conn.cursor()
+
+        try:
+            select_query = """SELECT p.personal_name, p.price, p.age, p.height, p.weight, g.gym_name
+                              FROM personals p
+                              JOIN gym g
+                              ON p.gym_id = g.gym_id;"""
+            
+            cur.execute(select_query)
+            rows = cur.fetchall()
+
+            df = pd.DataFrame(rows, columns=['Nome', 'Preço', 'Idade', 'Altura', 'Peso', 'Academia'])
+            print(df)
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
@@ -195,7 +220,7 @@ class ClientManager:
 
             print()
             if not registered_personal_id:
-                self.show_all('personals')
+                self.show_all_personals()
 
                 personal_name = input('\nDigite o nome do personal trainer de sua escolha: ')
                 find_personal_query = f"SELECT * FROM personals WHERE personal_name='{personal_name}'"
@@ -351,7 +376,7 @@ if __name__ == '__main__':
         choice = int(input("Escolha uma opção: "))
         print()
         if choice == 1:
-            manager.show_all('clients')
+            manager.show_all_clients()
         elif choice == 2:
             manager.show_one_client()
         elif choice == 3:
@@ -367,7 +392,7 @@ if __name__ == '__main__':
         elif choice == 8:
              manager.show_client_workout()
         elif choice == 9:
-            manager.show_all('personals')
+            manager.show_all_personals()
         elif choice == 0:
             break
         else:
