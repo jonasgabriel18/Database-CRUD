@@ -1,6 +1,7 @@
 import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
+from utils import random_workout_generator
 import os
 
 class ClientManager:
@@ -109,9 +110,6 @@ class ClientManager:
             if show:
                 df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym']).set_index('id')
                 print(df)
-
-            cur.close()
-            conn.close()
 
             return rows[0]
         except (Exception, psycopg2.DatabaseError) as error:
@@ -263,6 +261,16 @@ class ClientManager:
 
             update_client_query = "UPDATE clients SET personal_id = %s, gym_id = %s WHERE client_id = %s"
             cur.execute(update_client_query, (personal_id, personal_gym, client_id))
+
+            search_exercises_query = f"SELECT * FROM clients c JOIN exercises e ON c.client_id = e.client_id WHERE c.client_id={client_id};"
+            cur.execute(search_exercises_query)
+            rows = cur.fetchall()
+            if not rows:
+                exercises = random_workout_generator()
+                for exercise in exercises:
+                    exercise_query = f"""INSERT INTO exercises(client_id, exercise_name, number_of_sets, repetitions, weight, muscle_group)
+                                        VALUES ({client_id}, %s, %s, %s, %s, %s);"""
+                    cur.execute(exercise_query, exercise)
 
             conn.commit()
 
