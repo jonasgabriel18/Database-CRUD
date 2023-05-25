@@ -126,8 +126,19 @@ class ClientManager:
 
         name = input('Digite seu nome: ')
         age = int(input('Digite sua idade: '))
+
+        if age < 0:
+            raise Exception("Idade não pode ser negativa")
+        
         weight = int(input('Digite seu peso (em kg): '))
+
+        if weight < 0:
+            raise Exception("Peso não pode ser negativa")
+        
         height = int(input('Digite sua altura (em cm): '))
+
+        if height < 0:
+            raise Exception("Altura não pode ser negativa")
         print()
 
         insert_query = """ INSERT INTO clients(client_name, age, weight, height) VALUES (%s,%s,%s,%s)"""
@@ -162,6 +173,8 @@ class ClientManager:
 
             if column_to_update in ["age", "weight", "height"]:
                 new_value = int(new_value)
+                if new_value < 0:
+                    raise Exception("Valor não pode ser negativo")
             
             update_client_query = f"UPDATE clients SET {column_to_update} = {new_value} WHERE client_id = {client_id}"
             cur.execute(update_client_query)
