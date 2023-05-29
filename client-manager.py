@@ -46,7 +46,7 @@ class ClientManager:
     def show_all_clients(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
 
         cur = conn.cursor()
 
@@ -72,12 +72,12 @@ class ClientManager:
     def show_all_personals(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
 
         cur = conn.cursor()
 
         try:
-            select_query = """SELECT p.personal_name, p.price, p.age, p.height, p.weight, g.gym_name
+            select_query = """SELECT p.personal_id, p.personal_name, p.price, p.age, p.height, p.weight, g.gym_name
                               FROM personals p
                               JOIN gym g
                               ON p.gym_id = g.gym_id;"""
@@ -85,8 +85,9 @@ class ClientManager:
             cur.execute(select_query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['Nome', 'Preço', 'Idade', 'Altura', 'Peso', 'Academia'])
+            df = pd.DataFrame(rows, columns=['id', 'Nome', 'Preço', 'Idade', 'Altura', 'Peso', 'Academia']).set_index('id')
             print(df)
+            return rows
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
@@ -96,7 +97,7 @@ class ClientManager:
     def show_one_client(self, show=True):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
         client_name = input("Digite seu nome: ")
@@ -114,13 +115,14 @@ class ClientManager:
             return rows[0]
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
+        finally:
             cur.close()
             conn.close()
             
     def register_client(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
 
         cur = conn.cursor()
 
@@ -133,7 +135,7 @@ class ClientManager:
         weight = int(input('Digite seu peso (em kg): '))
 
         if weight < 0:
-            raise Exception("Peso não pode ser negativa")
+            raise Exception("Peso não pode ser negativo")
         
         height = int(input('Digite sua altura (em cm): '))
 
@@ -150,6 +152,7 @@ class ClientManager:
             print('Cliente cadastrado com sucesso!')
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
+            conn.rollback()
         finally:
             cur.close()
             conn.close()
@@ -157,7 +160,7 @@ class ClientManager:
     def update_client_register(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
 
@@ -183,6 +186,7 @@ class ClientManager:
             print('Informações cadastrais atualizadas com sucesso!')
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
+            conn.rollback()
         finally:
             cur.close()
             conn.close()
@@ -190,7 +194,7 @@ class ClientManager:
     def delete_client(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
 
@@ -208,6 +212,7 @@ class ClientManager:
             print('Cadastro de cliente deletado com sucesso!')
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
+            conn.rollback()
         finally:
             cur.close()
             conn.close()
@@ -215,7 +220,7 @@ class ClientManager:
     def make_appointment(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
 
@@ -231,10 +236,10 @@ class ClientManager:
 
             print()
             if not registered_personal_id:
-                self.show_all_personals()
+                all_personals = self.show_all_personals()
+                personal_index = int(input('\nDigite o índice do personal trainer de sua escolha: '))
 
-                personal_name = input('\nDigite o nome do personal trainer de sua escolha: ')
-                find_personal_query = f"SELECT * FROM personals WHERE personal_name='{personal_name}'"
+                find_personal_query = f"SELECT * FROM personals WHERE personal_id='{all_personals[personal_index-1][0]}'"
                 cur.execute(find_personal_query)
             else:
                 find_personal_query = f"SELECT * FROM personals WHERE personal_id='{registered_personal_id}'"
@@ -290,6 +295,7 @@ class ClientManager:
             print('Treino marcado com sucesso!')
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
+            conn.rollback()
         finally:
             cur.close()
             conn.close()
@@ -297,7 +303,7 @@ class ClientManager:
     def show_appointment(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
 
@@ -341,42 +347,23 @@ class ClientManager:
     def show_client_workout(self):
             conn = self.connect()
             if not conn:
-                return None
+                raise Exception("Erro na conexão com o database")
             
             cur = conn.cursor()
 
             try:
                 client = self.show_one_client(False)
                 client_id = client[0]
-                self.display_workout_options()
-                choice = int(input("Selecione uma opção: "))
+                #self.display_workout_options()
+                #choice = int(input("Selecione uma opção: "))
                 print()
                 base_query = f"""SELECT e.exercise_name, e.number_of_sets, e.repetitions, e.weight, e.muscle_group 
                                FROM exercises e
                                JOIN clients c
                                ON e.client_id = c.client_id
                                WHERE c.client_id={client_id}"""
-
-                if choice == 1:
-                    query = base_query + " AND e.muscle_group IN ('Peitoral', 'Ombro', 'Triceps');"
-                elif choice == 2:
-                    query = base_query + " AND e.muscle_group IN ('Costas', 'Biceps');"
-                elif choice == 3:
-                    query = base_query + " AND e.muscle_group IN ('Perna');"
-                elif choice == 4:
-                    query = base_query + " AND e.muscle_group IN ('Peitoral');"
-                elif choice == 5:
-                    query = base_query + " AND e.muscle_group IN ('Ombro');"
-                elif choice == 6:
-                    query = base_query + " AND e.muscle_group IN ('Triceps');"
-                elif choice == 7:
-                    query = base_query + " AND e.muscle_group IN ('Costas');"
-                elif choice == 8:
-                    query = base_query + " AND e.muscle_group IN ('Biceps');"
-                else:
-                    raise Exception("Opção não reconhecida")
-
-                cur.execute(query)
+                
+                cur.execute(base_query)
                 rows = cur.fetchall()
 
                 df = pd.DataFrame(rows, columns=['Exercicio', 'Séries', 'Repetições', 'Peso', 'Músculo'])
