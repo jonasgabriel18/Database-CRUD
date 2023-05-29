@@ -46,7 +46,7 @@ class ClientManager:
     def show_all_clients(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
 
         cur = conn.cursor()
 
@@ -72,12 +72,12 @@ class ClientManager:
     def show_all_personals(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
 
         cur = conn.cursor()
 
         try:
-            select_query = """SELECT p.personal_name, p.price, p.age, p.height, p.weight, g.gym_name
+            select_query = """SELECT p.personal_id, p.personal_name, p.price, p.age, p.height, p.weight, g.gym_name
                               FROM personals p
                               JOIN gym g
                               ON p.gym_id = g.gym_id;"""
@@ -85,8 +85,9 @@ class ClientManager:
             cur.execute(select_query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['Nome', 'Preço', 'Idade', 'Altura', 'Peso', 'Academia'])
+            df = pd.DataFrame(rows, columns=['id', 'Nome', 'Preço', 'Idade', 'Altura', 'Peso', 'Academia']).set_index('id')
             print(df)
+            return rows
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
@@ -96,7 +97,7 @@ class ClientManager:
     def show_one_client(self, show=True):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
         client_name = input("Digite seu nome: ")
@@ -114,13 +115,14 @@ class ClientManager:
             return rows[0]
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
+        finally:
             cur.close()
             conn.close()
             
     def register_client(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
 
         cur = conn.cursor()
 
@@ -158,7 +160,7 @@ class ClientManager:
     def update_client_register(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
 
@@ -192,7 +194,7 @@ class ClientManager:
     def delete_client(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
 
@@ -218,7 +220,7 @@ class ClientManager:
     def make_appointment(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
 
@@ -234,10 +236,10 @@ class ClientManager:
 
             print()
             if not registered_personal_id:
-                self.show_all_personals()
+                all_personals = self.show_all_personals()
+                personal_index = int(input('\nDigite o índice do personal trainer de sua escolha: '))
 
-                personal_name = input('\nDigite o nome do personal trainer de sua escolha: ')
-                find_personal_query = f"SELECT * FROM personals WHERE personal_name='{personal_name}'"
+                find_personal_query = f"SELECT * FROM personals WHERE personal_id='{all_personals[personal_index-1][0]}'"
                 cur.execute(find_personal_query)
             else:
                 find_personal_query = f"SELECT * FROM personals WHERE personal_id='{registered_personal_id}'"
@@ -301,7 +303,7 @@ class ClientManager:
     def show_appointment(self):
         conn = self.connect()
         if not conn:
-            return None
+            raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
 
@@ -345,7 +347,7 @@ class ClientManager:
     def show_client_workout(self):
             conn = self.connect()
             if not conn:
-                return None
+                raise Exception("Erro na conexão com o database")
             
             cur = conn.cursor()
 
