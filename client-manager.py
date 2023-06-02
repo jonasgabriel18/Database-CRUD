@@ -4,18 +4,23 @@ from dotenv import load_dotenv
 from utils import random_workout_generator
 import os
 
+from flask import Flask, request, render_template
+
+app = Flask(__name__)
+
+load_dotenv()
+            
+db_host = os.getenv('DB_HOST')
+db_database = os.getenv('DB_NAME')
+db_user = os.getenv('DB_USER')
+db_password = os.getenv('DB_PASSWORD')
+db_port = os.getenv('DB_PORT')
+
 class ClientManager:
 
-    def connect(self):
+    @staticmethod
+    def connect():
         try:
-            load_dotenv()
-            
-            db_host = os.getenv('DB_HOST')
-            db_database = os.getenv('DB_NAME')
-            db_user = os.getenv('DB_USER')
-            db_password = os.getenv('DB_PASSWORD')
-            db_port = os.getenv('DB_PORT')
-
             conn = psycopg2.connect(
                 host=db_host,
                 database=db_database,
@@ -43,8 +48,10 @@ class ClientManager:
         print("0: Sair")
         print()
     
-    def show_all_clients(self):
-        conn = self.connect()
+    @staticmethod
+    @app.route("/clients")
+    def show_all_clients():
+        conn = ClientManager.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
 
@@ -62,15 +69,18 @@ class ClientManager:
             rows = cur.fetchall()
 
             df = pd.DataFrame(rows, columns=['Nome', 'Idade', 'Peso', 'Altura', 'Personal Trainer', 'Academia'])
-            print(df)
+            return df.to_html()
+            #print(df)
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
             cur.close()
             conn.close()
     
-    def show_all_personals(self):
-        conn = self.connect()
+    @staticmethod
+    @app.route("/personals")
+    def show_all_personals():
+        conn = ClientManager.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
 
@@ -86,76 +96,79 @@ class ClientManager:
             rows = cur.fetchall()
 
             df = pd.DataFrame(rows, columns=['id', 'Nome', 'Preço', 'Idade', 'Altura', 'Peso', 'Academia']).set_index('id')
-            print(df)
-            return rows
+            #print(df)
+            return df.to_html()
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
             cur.close()
             conn.close()
     
-    def show_one_client(self, show=True):
-        conn = self.connect()
+    @staticmethod
+    @app.route("/clients/<client_name>")
+    def show_one_client(client_name, show=True):
+        conn = ClientManager.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
-        client_name = input("Digite seu nome: ")
-        print()
+        client_name = str(client_name)
+        #print()
 
         try:
             select_client_query = f"SELECT * FROM clients WHERE client_name = '{client_name}'"
             cur.execute(select_client_query)
             rows = cur.fetchall()
 
-            if show:
-                df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym']).set_index('id')
-                print(df)
+            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym']).set_index('id')
+            #print(df)
 
-            return rows[0]
+            return df.to_html()
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
             cur.close()
             conn.close()
-            
-    def register_client(self):
-        conn = self.connect()
+
+    @staticmethod
+    @app.route('/register-client', methods=["GET", "POST"])       
+    def register_client():
+        conn = ClientManager.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
 
-        cur = conn.cursor()
+        if request.method == 'GET':
+            return render_template('register_client.html')
+        elif request.method == 'POST':
+            cur = conn.cursor()
 
-        name = input('Digite seu nome: ')
-        age = int(input('Digite sua idade: '))
+            name = request.form.get('name')
+            age = int(request.form.get('age'))
+            weight = int(request.form.get('weight'))
+            height = int(request.form.get('height'))
 
-        if age < 0:
-            raise Exception("Idade não pode ser negativa")
-        
-        weight = int(input('Digite seu peso (em kg): '))
+            if age < 0:
+                raise Exception("Idade não pode ser negativa")
 
-        if weight < 0:
-            raise Exception("Peso não pode ser negativo")
-        
-        height = int(input('Digite sua altura (em cm): '))
+            if weight < 0:
+                raise Exception("Peso não pode ser negativo")
 
-        if height < 0:
-            raise Exception("Altura não pode ser negativa")
-        print()
+            if height < 0:
+                raise Exception("Altura não pode ser negativa")
 
-        insert_query = """ INSERT INTO clients(client_name, age, weight, height) VALUES (%s,%s,%s,%s)"""
-        inserted_values = (name, age, weight, height)
+            insert_query = """ INSERT INTO clients(client_name, age, weight, height) VALUES (%s,%s,%s,%s)"""
+            inserted_values = (name, age, weight, height)
 
-        try:
-            cur.execute(insert_query, inserted_values)
-            conn.commit()
-            print('Cliente cadastrado com sucesso!')
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-            conn.rollback()
-        finally:
-            cur.close()
-            conn.close()
+            try:
+                cur.execute(insert_query, inserted_values)
+                conn.commit()
+                return 'Cliente cadastrado com sucesso!'
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+                conn.rollback()
+            finally:
+                cur.close()
+                conn.close()
     
     def update_client_register(self):
         conn = self.connect()
@@ -377,10 +390,12 @@ class ClientManager:
                 conn.close()
 
 if __name__ == '__main__':
-    manager = ClientManager()
-
+    app.run(debug=True)
+    #manager = ClientManager()
+"""
     while True:
         manager.display_menu()
+        
         choice = int(input("Escolha uma opção: "))
         print()
         if choice == 1:
@@ -405,3 +420,4 @@ if __name__ == '__main__':
             break
         else:
             print('Opção inválida')
+"""
