@@ -113,7 +113,7 @@ class ClientManager:
             return render_template('show_one_client.html')
     
     @staticmethod
-    def get_client(client_name):
+    def get_client_by_name(client_name):
         conn = ClientManager.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
@@ -133,11 +133,33 @@ class ClientManager:
         finally:
             cur.close()
             conn.close()
+    
+    @staticmethod
+    def get_client_by_id(client_id):
+        conn = ClientManager.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+        
+        cur = conn.cursor()
+
+        try:
+            select_client_query = f"SELECT * FROM clients WHERE client_id = '{client_id}'"
+            cur.execute(select_client_query)
+            rows = cur.fetchall()
+
+            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym'])
+
+            return df
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
             
     @staticmethod
     @app.route("/get-client/<client_name>")
     def show_one_client(client_name):
-        client = ClientManager.get_client(client_name)
+        client = ClientManager.get_client_by_name(client_name)
         return client.to_html()
 
     @staticmethod
@@ -185,9 +207,11 @@ class ClientManager:
         if request.method == "POST":
             updated = {key: value for key, value in request.form.items() if value}
 
-            client = ClientManager.get_client(client_name)
-            ClientManager.update(client, list(updated.keys()), list(updated.values()))
-            client = ClientManager.get_client(client_name)
+            client = ClientManager.get_client_by_name(client_name)
+            client_id = client.iloc[0]['id']
+
+            ClientManager.update(client_id, list(updated.keys()), list(updated.values()))
+            client = ClientManager.get_client_by_id(client_id)
             
             return client.to_html()
         else:
@@ -195,32 +219,34 @@ class ClientManager:
 
 
     @staticmethod
-    def update(client, columns_to_update, new_values):
+    def update(client_id, columns_to_update, new_values):
         conn = ClientManager.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
         try:
-            client_id = client.iloc[0]['id']
-            
             base_query = "UPDATE clients SET "
 
             for i, column in enumerate(columns_to_update):
-                update_query = f"{column} = {new_values[i]}"
+                if new_values[i][0] == '-' and int(new_values[i]) < 0:
+                    raise Exception("Valores negativos não são permitidos")
+                
+                if column == 'name':
+                    update_query = f"client_name = '{new_values[i]}'"
+                else:
+                    update_query = f"{column} = {new_values[i]}"
+
                 if i != len(columns_to_update)-1:
                     update_query += ', '
                 
                 base_query += update_query
             
-            print(base_query)
             end_query = f" WHERE client_id = {client_id}"
             update_client_query = base_query + end_query
             
             cur.execute(update_client_query)
             conn.commit()
-            print()
-            print('Informações cadastrais atualizadas com sucesso!')
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             conn.rollback()
@@ -228,31 +254,43 @@ class ClientManager:
             cur.close()
             conn.close()
     
-    def delete_client(self):
-        conn = self.connect()
+
+    @staticmethod
+    def delete(client_name):
+        conn = ClientManager.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
 
         try:
-            client = self.show_one_client()
+            client = ClientManager.get_client_by_name(client_name)
             if client is None:
                 raise Exception("ID do cliente retornou vazio")
-            client_id = client[0]
+            
+            client_id = client.iloc[0]['id']
 
             delete_query = f"DELETE FROM clients WHERE client_id = {client_id}"
             cur.execute(delete_query)
             conn.commit()
-
-            print()
-            print('Cadastro de cliente deletado com sucesso!')
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             conn.rollback()
         finally:
             cur.close()
             conn.close()
+
+    @staticmethod
+    @app.route('/delete', methods=["GET", "POST"])
+    def delete_client():
+        if request.method == "POST":
+            client_name = request.form["client_name"]
+            ClientManager.delete(client_name)
+
+            return render_template('delete_confirmation.html')
+        else:
+            return render_template('delete_client.html')
+                
 
     def make_appointment(self):
         conn = self.connect()
@@ -391,8 +429,7 @@ class ClientManager:
             try:
                 client = self.show_one_client(False)
                 client_id = client[0]
-                #self.display_workout_options()
-                #choice = int(input("Selecione uma opção: "))
+                
                 print()
                 base_query = f"""SELECT e.exercise_name, e.number_of_sets, e.repetitions, e.weight, e.muscle_group 
                                FROM exercises e
