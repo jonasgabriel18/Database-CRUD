@@ -105,41 +105,42 @@ class ClientManager:
             conn.close()
     
     @staticmethod
-    @app.route("/clients/<client_name>")
-    def show_one_client(client_name, show=True):
-        conn = ClientManager.connect()
-        if not conn:
-            raise Exception("Erro na conexão com o database")
-        
-        cur = conn.cursor()
-        client_name = str(client_name)
-        #print()
+    @app.route("/get-client/", methods=["GET", "POST"])
+    def show_one_client():
+        if request.method == "GET":
+            return render_template('show_one_client.html')
+        elif request.method == "POST":
+            conn = ClientManager.connect()
+            if not conn:
+                raise Exception("Erro na conexão com o database")
 
-        try:
-            select_client_query = f"SELECT * FROM clients WHERE client_name = '{client_name}'"
-            cur.execute(select_client_query)
-            rows = cur.fetchall()
+            cur = conn.cursor()
 
-            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym']).set_index('id')
-            #print(df)
+            try:
+                client_name = request.form.get('name')
+                select_client_query = f"SELECT * FROM clients WHERE client_name = '{client_name}'"
+                cur.execute(select_client_query)
+                rows = cur.fetchall()
 
-            return df.to_html()
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-        finally:
-            cur.close()
-            conn.close()
+                df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym']).set_index('id')
+                #print(df)
+
+                return df.to_html()
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+            finally:
+                cur.close()
+                conn.close()
 
     @staticmethod
     @app.route('/register-client', methods=["GET", "POST"])       
     def register_client():
-        conn = ClientManager.connect()
-        if not conn:
-            raise Exception("Erro na conexão com o database")
-
         if request.method == 'GET':
             return render_template('register_client.html')
         elif request.method == 'POST':
+            conn = ClientManager.connect()
+            if not conn:
+                raise Exception("Erro na conexão com o database")
             cur = conn.cursor()
 
             name = request.form.get('name')
