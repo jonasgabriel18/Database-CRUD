@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from utils import random_workout_generator
 import os
 
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, redirect, url_for
 
 app = Flask(__name__)
 
@@ -70,7 +70,6 @@ class ClientManager:
 
             df = pd.DataFrame(rows, columns=['Nome', 'Idade', 'Peso', 'Altura', 'Personal Trainer', 'Academia'])
             return df.to_html()
-            #print(df)
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
@@ -96,41 +95,50 @@ class ClientManager:
             rows = cur.fetchall()
 
             df = pd.DataFrame(rows, columns=['id', 'Nome', 'Preço', 'Idade', 'Altura', 'Peso', 'Academia']).set_index('id')
-            #print(df)
+            
             return df.to_html()
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
             cur.close()
             conn.close()
+
+    @staticmethod
+    @app.route("/client_signin/", methods=["GET", "POST"])
+    def show_client():
+        if request.method == "POST":
+            client_name = request.form.get('client_name')
+            return redirect(url_for('show_one_client', client_name=client_name))
+        else:
+            return render_template('show_one_client.html')
     
     @staticmethod
-    @app.route("/get-client/", methods=["GET", "POST"])
-    def show_one_client():
-        if request.method == "GET":
-            return render_template('show_one_client.html')
-        elif request.method == "POST":
-            conn = ClientManager.connect()
-            if not conn:
-                raise Exception("Erro na conexão com o database")
+    def get_client(client_name):
+        conn = ClientManager.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+        
+        cur = conn.cursor()
 
-            cur = conn.cursor()
+        try:
+            select_client_query = f"SELECT * FROM clients WHERE client_name = '{client_name}'"
+            cur.execute(select_client_query)
+            rows = cur.fetchall()
 
-            try:
-                client_name = request.form.get('name')
-                select_client_query = f"SELECT * FROM clients WHERE client_name = '{client_name}'"
-                cur.execute(select_client_query)
-                rows = cur.fetchall()
+            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym'])
 
-                df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym']).set_index('id')
-                #print(df)
-
-                return df.to_html()
-            except (Exception, psycopg2.DatabaseError) as error:
-                print(error)
-            finally:
-                cur.close()
-                conn.close()
+            return df
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
+            
+    @staticmethod
+    @app.route("/get-client/<client_name>")
+    def show_one_client(client_name):
+        client = ClientManager.get_client(client_name)
+        return client.to_html()
 
     @staticmethod
     @app.route('/register-client', methods=["GET", "POST"])       
@@ -171,29 +179,44 @@ class ClientManager:
                 cur.close()
                 conn.close()
     
-    def update_client_register(self):
-        conn = self.connect()
+    @staticmethod
+    @app.route("/update/<client_name>", methods=["GET", "POST"])
+    def update_client(client_name):
+        if request.method == "POST":
+            updated = {key: value for key, value in request.form.items() if value}
+
+            client = ClientManager.get_client(client_name)
+            ClientManager.update(client, list(updated.keys()), list(updated.values()))
+            client = ClientManager.get_client(client_name)
+            
+            return client.to_html()
+        else:
+            return render_template('update_client.html', client_name=client_name)
+
+
+    @staticmethod
+    def update(client, columns_to_update, new_values):
+        conn = ClientManager.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
-
         try:
-            client = self.show_one_client()
-            if client is None:
-                raise Exception("ID do cliente retornou vazio")
-            client_id = client[0]
+            client_id = client.iloc[0]['id']
             
-            print()
-            column_to_update = input("Digite a coluna que deseja alterar: ")
-            new_value = input("Digite seu novo valor: ")
+            base_query = "UPDATE clients SET "
 
-            if column_to_update in ["age", "weight", "height"]:
-                new_value = int(new_value)
-                if new_value < 0:
-                    raise Exception("Valor não pode ser negativo")
+            for i, column in enumerate(columns_to_update):
+                update_query = f"{column} = {new_values[i]}"
+                if i != len(columns_to_update)-1:
+                    update_query += ', '
+                
+                base_query += update_query
             
-            update_client_query = f"UPDATE clients SET {column_to_update} = {new_value} WHERE client_id = {client_id}"
+            print(base_query)
+            end_query = f" WHERE client_id = {client_id}"
+            update_client_query = base_query + end_query
+            
             cur.execute(update_client_query)
             conn.commit()
             print()
