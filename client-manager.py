@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from utils import random_workout_generator
 import os
 
-from flask import Flask, request, render_template, redirect, url_for, flash
+from flask import Flask, request, render_template, redirect, url_for, flash, render_template_string
 
 app = Flask(__name__)
 
@@ -60,7 +60,14 @@ class ClientManager:
             rows = cur.fetchall()
 
             df = pd.DataFrame(rows, columns=['Nome', 'Idade', 'Peso', 'Altura', 'Personal Trainer', 'Academia'])
-            return df.to_html()
+            html_df = df.to_html()
+            print(html_df)
+            html_table_button = f"""
+                                    {html_df}
+                                    <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>
+                                    """
+            
+            return render_template_string(html_table_button)
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
@@ -71,7 +78,13 @@ class ClientManager:
     @app.route("/personals")
     def show_all_personals():
         df = ClientManager.get_all_personals()
-        return df.to_html()
+        html_df = df.to_html()
+        html_table_button = f"""
+                                            {html_df}
+                                            <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>
+                                            """
+            
+        return render_template_string(html_table_button)
     
     @staticmethod
     def get_all_personals():
@@ -90,7 +103,7 @@ class ClientManager:
             cur.execute(select_query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['id', 'Nome', 'Preço', 'Idade', 'Altura', 'Peso', 'Academia']).set_index('id')
+            df = pd.DataFrame(rows, columns=['id', 'Nome', 'Preço', 'Idade', 'Altura', 'Peso', 'Academia'])
             
             return df
         except (Exception, psycopg2.DatabaseError) as error:
@@ -220,7 +233,13 @@ class ClientManager:
         if request.method == "POST":
             client_name = request.form.get('client_name')
             client = ClientManager.get_client_by_name(client_name)
-            return client.to_html()
+            html_df = client.to_html()
+            html_table_button = f"""
+                                            {html_df}
+                                            <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>
+                                            """
+            
+            return render_template_string(html_table_button)
         else:
             return render_template('get_client_name.html')
 
@@ -275,7 +294,13 @@ class ClientManager:
             ClientManager.update(client_id, list(updated.keys()), list(updated.values()))
             client = ClientManager.get_client_by_id(client_id)
             
-            return client.to_html()
+            html_df = client.to_html()
+            html_table_button = f"""
+                                            {html_df}
+                                            <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>
+                                            """
+            
+            return render_template_string(html_table_button)
         else:
             return render_template('get_client_name.html')
 
@@ -357,77 +382,80 @@ class ClientManager:
     @app.route('/select-personal/<client_name>', methods=["GET", "POST"])
     def select_personal(client_name):
         if request.method == "POST":
-            personal_id = int(request.form["personal_index"])
+            personal_id = int(request.form.get('personal_id'))
             return redirect(url_for("select_schedule", client_name=client_name, personal_id=personal_id))
         else:
-            client = ClientManager.get_client_by_name(client_name)
-            registered_personal_id = client.iloc[0]['personal_id']
-
-            if not registered_personal_id:
-                all_personals = ClientManager.get_all_personals()
-                return render_template("select_personal.html", client_name=client_name, all_personals=all_personals)
-            else:
-                return redirect(url_for("select_schedule", client_name=client_name, personal_id=registered_personal_id))
+            all_personals = ClientManager.get_all_personals()
+            return render_template("select_personal.html", client_name=client_name, all_personals=all_personals)
 
     @staticmethod
     @app.route('/select-schedule/<client_name>/<personal_id>', methods=["GET", "POST"])
     def select_schedule(client_name, personal_id):
         if request.method == "POST":
             schedule_id = int(request.form.get("schedule_index"))
-            return redirect(url_for("make_appointment", client_name=client_name, personal_id=personal_id, schedule_id=schedule_id))
+            conn = ClientManager.connect()
+            if not conn:
+                raise Exception("Erro na conexão com o database")
+            
+            cur = conn.cursor()
+
+            try:
+                client = ClientManager.get_client_by_name(client_name)
+                client_id = client.iloc[0]['id'].item()
+
+                selected_appointment = ClientManager.get_schedule_by_id(schedule_id)
+
+                personal = ClientManager.get_personal_by_id(personal_id)
+
+                update_personal_query = f"UPDATE personals_schedules SET is_available = false WHERE schedule_id = {schedule_id}"
+                cur.execute(update_personal_query)
+                time = selected_appointment.iloc[0]['time']
+                day = selected_appointment.iloc[0]['day']
+
+                insert_client_appointment = "INSERT INTO clients_appointment (client_id, appointment_time, appointment_day) VALUES(%s, %s, %s)"
+                cur.execute(insert_client_appointment, (client_id, time, day))
+                
+                update_client_query = "UPDATE clients SET personal_id = %s, gym_id = %s WHERE client_id = %s"
+                cur.execute(update_client_query, (int(personal_id), personal.iloc[0]['Academia'].item(), client_id))
+                
+                search_exercises_query = f"SELECT * FROM clients c JOIN exercises e ON c.client_id = e.client_id WHERE c.client_id={client_id};"
+                cur.execute(search_exercises_query)
+                rows = cur.fetchall()
+                
+                if not rows:
+                    exercises = random_workout_generator()
+                    for exercise in exercises:
+                        exercise_query = f"""INSERT INTO exercises(client_id, exercise_name, number_of_sets, repetitions, weight, muscle_group)
+                                            VALUES ({client_id}, %s, %s, %s, %s, %s);"""
+                        cur.execute(exercise_query, exercise)
+                
+                conn.commit()
+
+                return "Treino marcado com sucesso!"
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+            finally:
+                cur.close()
+                conn.close()
         else:
             schedule = ClientManager.get_available_schedule(personal_id)
-            print(schedule)
             return render_template("select_schedule.html", client_name=client_name, personal_id=personal_id, schedule=schedule)
     
     @staticmethod
-    @app.route('/make_appointment/<client_name>/<personal_id>/<schedule_id>')
-    def make_appointment(client_name, personal_id, schedule_id):
-        conn = ClientManager.connect()
-        if not conn:
-            raise Exception("Erro na conexão com o database")
-        
-        cur = conn.cursor()
-
-        try:
+    @app.route('/make-appointment', methods=["GET", "POST"])
+    def make_appointment():
+        if request.method == "POST":
+            client_name = request.form.get("client_name")
             client = ClientManager.get_client_by_name(client_name)
-            client_id = client.iloc[0]['id'].item()
+            registered_personal_id = client.iloc[0]['personal_id']
 
-            selected_appointment = ClientManager.get_schedule_by_id(schedule_id)
-
-            personal = ClientManager.get_personal_by_id(personal_id)
-
-            update_personal_query = f"UPDATE personals_schedules SET is_available = false WHERE schedule_id = {schedule_id}"
-            cur.execute(update_personal_query)
-            time = selected_appointment.iloc[0]['time']
-            day = selected_appointment.iloc[0]['day']
-
-            insert_client_appointment = "INSERT INTO clients_appointment (client_id, appointment_time, appointment_day) VALUES(%s, %s, %s)"
-            cur.execute(insert_client_appointment, (client_id, time, day))
-            
-            update_client_query = "UPDATE clients SET personal_id = %s, gym_id = %s WHERE client_id = %s"
-            cur.execute(update_client_query, (int(personal_id), personal.iloc[0]['Academia'].item(), client_id))
-            
-            search_exercises_query = f"SELECT * FROM clients c JOIN exercises e ON c.client_id = e.client_id WHERE c.client_id={client_id};"
-            cur.execute(search_exercises_query)
-            rows = cur.fetchall()
-            
-            if not rows:
-                exercises = random_workout_generator()
-                for exercise in exercises:
-                    exercise_query = f"""INSERT INTO exercises(client_id, exercise_name, number_of_sets, repetitions, weight, muscle_group)
-                                        VALUES ({client_id}, %s, %s, %s, %s, %s);"""
-                    cur.execute(exercise_query, exercise)
-            
-            conn.commit()
-
-            return "Treino marcado com sucesso!"
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-        finally:
-            cur.close()
-            conn.close()
-
+            if not registered_personal_id:
+                return redirect(url_for("select_personal", client_name=client_name))
+            else:
+                return redirect(url_for("select_schedule", client_name=client_name, personal_id=registered_personal_id))
+        else:
+            return render_template("get_client_name.html")
+        
     @staticmethod
     @app.route('/appointments/', methods=["GET", "POST"])
     def show_appointment():
@@ -457,7 +485,13 @@ class ClientManager:
                 df = pd.DataFrame(rows, columns=['Aluno', 'Personal', 'Dia', 'Hora'])
                 if df.empty:
                     flash('Aluno não possui treinos marcados!')
-                return df.to_html()
+                html_df = df.to_html()
+                html_table_button = f"""
+                                            {html_df}
+                                            <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>
+                                            """
+            
+                return render_template_string(html_table_button)
             except (Exception, psycopg2.DatabaseError) as error:
                 print(error)
             finally:
@@ -492,7 +526,13 @@ class ClientManager:
                 rows = cur.fetchall()
 
                 df = pd.DataFrame(rows, columns=['Exercicio', 'Séries', 'Repetições', 'Peso', 'Músculo'])
-                return df.to_html()
+                html_df = df.to_html()
+                html_table_button = f"""
+                                            {html_df}
+                                            <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>
+                                            """
+            
+                return render_template_string(html_table_button)
             except (Exception, psycopg2.DatabaseError) as error:
                 print(error)
             finally:

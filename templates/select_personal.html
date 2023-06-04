@@ -1,32 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Agendamento de Treino</title>
+    <title>Selecionar Personal Trainer</title>
 </head>
 <body>
-    <h1>Agendamento de Treino</h1>
+    <h1>Selecionar Personal Trainer</h1>
+    <p>Cliente: {{ client_name }}</p>
     
-    {% if not personal_selected %}
-        <h2>Selecione o Personal Trainer:</h2>
-        <form method="POST" action="{{ url_for('make_appointment', client_name=client_name) }}">
-            <select name="personal_index">
-                {% for index, personal in enumerate(all_personals) %}
-                    <option value="{{ index }}">{{ personal.name }}</option>
-                {% endfor %}
-            </select>
-            <button type="submit">Selecionar Personal Trainer</button>
-        </form>
-    {% else %}
-        <h2>Horários disponíveis do Personal Trainer: {{ selected_personal.name }}</h2>
-        <form method="POST" action="{{ url_for('make_appointment', client_name=client_name) }}">
-            <input type="hidden" name="personal_index" value="{{ selected_personal.index }}">
-            <select name="schedule_index">
-                {% for index, schedule in enumerate(selected_personal.schedules) %}
-                    <option value="{{ index }}">{{ schedule.time }} - {{ schedule.day }}</option>
-                {% endfor %}
-            </select>
-            <button type="submit">Agendar Treino</button>
-        </form>
-    {% endif %}
+    <h2>Horários Disponíveis:</h2>
+    <form method="POST" action="{{ url_for('select_personal', client_name=client_name, all_personals=all_personals) }}">
+        {% for index, row in all_personals.iterrows() %}
+            <input type="radio" name="personal_id" value="{{ row['id'] }}"> 
+            {{ row['Nome'] }} <br>
+        {% endfor %}
+        <br>
+        <input type="submit" value="Selecionar">
+    </form>
+    <a href="{{ url_for('menu') }}">Voltar ao Menu Principal</a>
 </body>
 </html>
