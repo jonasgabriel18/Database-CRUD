@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from utils import random_workout_generator
 import os
 
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for, flash
 
 app = Flask(__name__)
 
@@ -367,87 +367,6 @@ class ClientManager:
         else:
             return render_template('delete_client.html')
                 
-
-    @staticmethod
-    @app.route('/make_appointment/<client_name>', methods=["GET", "POST"])
-    def appointment(client_name):
-        conn = ClientManager.connect()
-        if not conn:
-            raise Exception("Erro na conexão com o database")
-        
-        cur = conn.cursor()
-
-        try:
-            client = ClientManager.get_client_by_name(client_name)
-
-            if not client:
-                print('Nenhum cliente cadastrado com esse nome foi encontrado')
-                return None
-            
-            client_id = client.iloc[0]['id']
-            registered_personal_id = client.iloc[0]['personal_id']
-
-            if not registered_personal_id:
-                all_personals = ClientManager.get_all_personals()
-                personal_index = int(input('\nDigite o índice do personal trainer de sua escolha: '))
-
-                find_personal_query = f"SELECT * FROM personals WHERE personal_id='{all_personals[personal_index-1][0]}'"
-                cur.execute(find_personal_query)
-            else:
-                find_personal_query = f"SELECT * FROM personals WHERE personal_id='{registered_personal_id}'"
-                cur.execute(find_personal_query)
-
-            personal = cur.fetchall()
-            
-            personal_id = personal[0][0]
-            personal_gym = personal[0][6]
-            
-            get_available_schedule_query = f"SELECT * FROM personals_schedules WHERE personal_id='{personal_id}' AND is_available = true;"
-            cur.execute(get_available_schedule_query)
-            available_schedule = cur.fetchall()
-            
-            df_schedule = pd.DataFrame(available_schedule, columns=['id', 'time', 'day', 'availability', 'personal_id'])
-
-            if df_schedule.empty:
-                raise Exception("O personal não possui horários livres")
-            
-            df_schedule.drop(['id', 'availability', 'personal_id'], axis=1, inplace=True)
-            print()
-            print(df_schedule)
-            
-            print()
-            index = int(input('Selecione o índice do horário que voce deseja marcar: '))
-            selected_appointment = available_schedule[index]
-
-            update_personal_query = f"UPDATE personals_schedules SET is_available = false WHERE schedule_id = {selected_appointment[0]}"
-            cur.execute(update_personal_query)
-
-            insert_client_appointment = "INSERT INTO clients_appointment (client_id, appointment_time, appointment_day) VALUES(%s, %s, %s)"
-            cur.execute(insert_client_appointment, (client_id, selected_appointment[1], selected_appointment[2]))
-
-            update_client_query = "UPDATE clients SET personal_id = %s, gym_id = %s WHERE client_id = %s"
-            cur.execute(update_client_query, (personal_id, personal_gym, client_id))
-
-            search_exercises_query = f"SELECT * FROM clients c JOIN exercises e ON c.client_id = e.client_id WHERE c.client_id={client_id};"
-            cur.execute(search_exercises_query)
-            rows = cur.fetchall()
-            if not rows:
-                exercises = random_workout_generator()
-                for exercise in exercises:
-                    exercise_query = f"""INSERT INTO exercises(client_id, exercise_name, number_of_sets, repetitions, weight, muscle_group)
-                                        VALUES ({client_id}, %s, %s, %s, %s, %s);"""
-                    cur.execute(exercise_query, exercise)
-
-            conn.commit()
-
-            print('Treino marcado com sucesso!')
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-            conn.rollback()
-        finally:
-            cur.close()
-            conn.close()
-    
     @staticmethod
     @app.route('/select-personal/<client_name>', methods=["GET", "POST"])
     def select_personal(client_name):
@@ -523,37 +442,44 @@ class ClientManager:
             cur.close()
             conn.close()
 
-    def show_appointment(self):
-        conn = self.connect()
-        if not conn:
-            raise Exception("Erro na conexão com o database")
-        
-        cur = conn.cursor()
-
-        try:
-            client = self.show_one_client(False)
-            client_id = client[0]
-
-            query = f"""SELECT c.client_name, p.personal_name, a.appointment_day, a.appointment_time FROM clients c
-                       JOIN personals p
-                       ON c.personal_id = p.personal_id
-                       JOIN clients_appointment a
-                       ON a.client_id = c.client_id
-                       WHERE c.client_id = {client_id}
-                       ORDER BY a.appointment_day, a.appointment_time ASC;"""
+    @staticmethod
+    @app.route('/appointments/<client_name>', methods=["GET", "POST"])
+    def show_appointment(client_name):
+        if request.method == "POST":
+            conn = ClientManager.connect()
+            if not conn:
+                raise Exception("Erro na conexão com o database")
             
-            cur.execute(query)
-            rows = cur.fetchall()
+            cur = conn.cursor()
 
-            df = pd.DataFrame(rows, columns=['Aluno', 'Personal', 'Dia', 'Hora'])
-            print(df)
+            try:
+                client_name = request.form.get('client_name')
+                client = ClientManager.get_client_by_name(client_name)
+                client_id = client.iloc[0]['id']
 
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-        finally:
-            cur.close()
-            conn.close()
+                query = f"""SELECT c.client_name, p.personal_name, a.appointment_day, a.appointment_time FROM clients c
+                        JOIN personals p
+                        ON c.personal_id = p.personal_id
+                        JOIN clients_appointment a
+                        ON a.client_id = c.client_id
+                        WHERE c.client_id = {client_id}
+                        ORDER BY a.appointment_day, a.appointment_time ASC;"""
+                
+                cur.execute(query)
+                rows = cur.fetchall()
 
+                df = pd.DataFrame(rows, columns=['Aluno', 'Personal', 'Dia', 'Hora'])
+                if df.empty:
+                    flash('Aluno não possui treinos marcados!')
+                return df.to_html()
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+            finally:
+                cur.close()
+                conn.close()
+        else:
+            print("oi")
+            return render_template('get_client_name.html')
 
     def display_workout_options(self):
         print()
