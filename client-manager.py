@@ -478,33 +478,24 @@ class ClientManager:
                 cur.close()
                 conn.close()
         else:
-            print("oi")
             return render_template('get_client_name.html')
 
-    def display_workout_options(self):
-        print()
-        print("1: Mostrar treino A")
-        print("2: Mostrar treino B")
-        print("3: Mostrar treino C")
-        print("4: Mostrar treino de peitoral")
-        print("5: Mostrar treino de ombro")
-        print("6: Mostrar treino de triceps")
-        print("7: Mostrar treino de costas")
-        print("8: Mostrar treino de biceps")
-        print()
-
-    def show_client_workout(self):
-            conn = self.connect()
+    @staticmethod
+    @app.route("/workouts", methods=["GET", "POST"])
+    def show_client_workout():
+        
+        if request.method == "POST":
+            conn = ClientManager.connect()
             if not conn:
                 raise Exception("Erro na conexão com o database")
             
             cur = conn.cursor()
 
             try:
-                client = self.show_one_client(False)
-                client_id = client[0]
+                client_name = request.form.get("client_name")
+                client = ClientManager.get_client_by_name(client_name)
+                client_id = client.iloc[0]['id']
                 
-                print()
                 base_query = f"""SELECT e.exercise_name, e.number_of_sets, e.repetitions, e.weight, e.muscle_group 
                                FROM exercises e
                                JOIN clients c
@@ -515,14 +506,14 @@ class ClientManager:
                 rows = cur.fetchall()
 
                 df = pd.DataFrame(rows, columns=['Exercicio', 'Séries', 'Repetições', 'Peso', 'Músculo'])
-                print()
-                print(df)
-
+                return df.to_html()
             except (Exception, psycopg2.DatabaseError) as error:
                 print(error)
             finally:
                 cur.close()
                 conn.close()
+        else:
+            return render_template('get_client_name.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
