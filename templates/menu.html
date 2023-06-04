@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Menu</title>
+</head>
+<body>
+    <h1>Menu</h1>
+    <ul>
+        <li><a href="{{ url_for('show_all_clients') }}">Mostrar clientes</a></li>
+        <li><a href="{{ url_for('show_one_client'), client_name='unknown' }}">Mostrar um cliente</a></li>
+        <li><a href="{{ url_for('register_client'), client_name='unknown'  }}">Registrar novo cliente</a></li>
+        <li><a href="{{ url_for('update_client'), client_name='unknown'  }}">Atualizar cliente</a></li>
+        <li><a href="{{ url_for('delete_client'), client_name='unknown'  }}">Deletar um cliente</a></li>
+        <li><a href="{{ url_for('make_appointment'), client_name='unknown'  }}">Marcar um treino</a></li>
+        <li><a href="{{ url_for('show_appointment'), client_name='unknown'  }}">Mostrar treinos marcados</a></li>
+        <li><a href="{{ url_for('show_client_workout'), client_name='unknown'  }}">Mostrar exercícios</a></li>
+    </ul>
+</body>
+</html>

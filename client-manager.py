@@ -34,19 +34,10 @@ class ClientManager:
             print('Failed to connect to database')
             return None
     
-    def display_menu(self):
-        print()
-        print("1: Mostrar clientes")
-        print("2: Mostrar um cliente")
-        print("3: Registrar novo cliente")
-        print("4: Agende um treino")
-        print("5: Mostrar agendamentos")
-        print("6: Atualizar cliente")
-        print("7: Excluir cliente")
-        print("8: Mostrar treino do cliente")
-        print("9: Mostrar personal trainers")
-        print("0: Sair")
-        print()
+    @staticmethod
+    @app.route('/')
+    def menu():
+        return render_template('menu.html')
     
     @staticmethod
     @app.route("/clients")
@@ -108,15 +99,6 @@ class ClientManager:
             cur.close()
             conn.close()
 
-    @staticmethod
-    @app.route("/client_signin/", methods=["GET", "POST"])
-    def show_client():
-        if request.method == "POST":
-            client_name = request.form.get('client_name')
-            return redirect(url_for('show_one_client', client_name=client_name))
-        else:
-            return render_template('show_one_client.html')
-    
     @staticmethod
     def get_client_by_name(client_name):
         conn = ClientManager.connect()
@@ -233,10 +215,14 @@ class ClientManager:
             conn.close()
             
     @staticmethod
-    @app.route("/get-client/<client_name>")
-    def show_one_client(client_name):
-        client = ClientManager.get_client_by_name(client_name)
-        return client.to_html()
+    @app.route("/get-client/", methods=["GET", "POST"])
+    def show_one_client():
+        if request.method == "POST":
+            client_name = request.form.get('client_name')
+            client = ClientManager.get_client_by_name(client_name)
+            return client.to_html()
+        else:
+            return render_template('get_client_name.html')
 
     @staticmethod
     @app.route('/register-client', methods=["GET", "POST"])       
@@ -278,11 +264,11 @@ class ClientManager:
                 conn.close()
     
     @staticmethod
-    @app.route("/update/<client_name>", methods=["GET", "POST"])
-    def update_client(client_name):
+    @app.route("/update/", methods=["GET", "POST"])
+    def update_client():
         if request.method == "POST":
             updated = {key: value for key, value in request.form.items() if value}
-
+            client_name = request.form.get("client_name")
             client = ClientManager.get_client_by_name(client_name)
             client_id = client.iloc[0]['id']
 
@@ -291,7 +277,7 @@ class ClientManager:
             
             return client.to_html()
         else:
-            return render_template('update_client.html', client_name=client_name)
+            return render_template('get_client_name.html')
 
 
     @staticmethod
@@ -363,9 +349,9 @@ class ClientManager:
             client_name = request.form["client_name"]
             ClientManager.delete(client_name)
 
-            return render_template('delete_confirmation.html')
+            return "Client deletado com sucesso!"
         else:
-            return render_template('delete_client.html')
+            return render_template('get_client_name.html')
                 
     @staticmethod
     @app.route('/select-personal/<client_name>', methods=["GET", "POST"])
@@ -443,8 +429,8 @@ class ClientManager:
             conn.close()
 
     @staticmethod
-    @app.route('/appointments/<client_name>', methods=["GET", "POST"])
-    def show_appointment(client_name):
+    @app.route('/appointments/', methods=["GET", "POST"])
+    def show_appointment():
         if request.method == "POST":
             conn = ClientManager.connect()
             if not conn:
