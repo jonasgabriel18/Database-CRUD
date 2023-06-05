@@ -6,7 +6,7 @@ import sys
 directory = os.path.dirname(os.path.abspath("__file__"))
 sys.path.append(os.path.dirname(os.path.dirname(directory)))
 
-from src.models.utils import random_workout_generator
+from src.models.utils import random_workout_generator, df_html
 from src.models.client import ClientData
 
 from flask import Flask, request, render_template, redirect, url_for, flash, render_template_string
@@ -39,12 +39,8 @@ def show_all_clients():
         rows = cur.fetchall()
 
         df = pd.DataFrame(rows, columns=['Nome', 'Idade', 'Peso', 'Altura', 'Personal Trainer', 'Academia'])
-        html_df = df.to_html()
             
-        html_table_button = f"""
-                            {html_df}
-                                <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>
-                            """
+        html_table_button = df_html(df)
             
         return render_template_string(html_table_button)
     except (Exception, psycopg2.DatabaseError) as error:
@@ -64,17 +60,12 @@ def show_all_personals():
         
     return render_template_string(html_table_button)
 
-        
 @app.route("/get-client/", methods=["GET", "POST"])
 def show_one_client():
     if request.method == "POST":
         client_name = request.form.get('client_name')
         client = cli_manager.get_client_by_name(client_name)
-        html_df = client.to_html()
-        html_table_button = f"""
-                                        {html_df}
-                                        <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>
-                                        """
+        html_table_button = df_html(client)
         
         return render_template_string(html_table_button)
     else:
@@ -129,11 +120,7 @@ def update_client():
         cli_manager.update(client_id, list(updated.keys()), list(updated.values()))
         client = cli_manager.get_client_by_id(client_id)
         
-        html_df = client.to_html()
-        html_table_button = f"""
-                                {html_df}
-                                <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>
-                                """
+        html_table_button = df_html(client)
         
         return render_template_string(html_table_button)
     else:
@@ -252,11 +239,8 @@ def show_appointment():
             df = pd.DataFrame(rows, columns=['Aluno', 'Personal', 'Dia', 'Hora'])
             if df.empty:
                 flash('Aluno não possui treinos marcados!')
-            html_df = df.to_html()
-            html_table_button = f"""
-                                        {html_df}
-                                        <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>
-                                        """
+
+            html_table_button = df_html(df)
         
             return render_template_string(html_table_button)
         except (Exception, psycopg2.DatabaseError) as error:
@@ -292,11 +276,7 @@ def show_client_workout():
             rows = cur.fetchall()
 
             df = pd.DataFrame(rows, columns=['Exercicio', 'Séries', 'Repetições', 'Peso', 'Músculo'])
-            html_df = df.to_html()
-            html_table_button = f"""
-                                        {html_df}
-                                        <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>
-                                        """
+            html_table_button = df_html(df)
         
             return render_template_string(html_table_button)
         except (Exception, psycopg2.DatabaseError) as error:
