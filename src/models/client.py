@@ -28,6 +28,33 @@ class ClientData:
             print('Failed to connect to database')
             return None
     
+    def get_all_clients(self):
+        conn = self.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+
+        cur = conn.cursor()
+
+        try:
+            select_query = """SELECT c.client_name, c.age, c.weight, c.height, p.personal_name, g.gym_name
+                            FROM clients c
+                            LEFT JOIN personals p
+                            ON c.personal_id = p.personal_id
+                            LEFT JOIN gym g
+                            ON c.gym_id = g.gym_id;"""
+            
+            cur.execute(select_query)
+            rows = cur.fetchall()
+
+            df = pd.DataFrame(rows, columns=['Nome', 'Idade', 'Peso', 'Altura', 'Personal Trainer', 'Academia'])
+            
+            return df
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
+
     def get_all_personals(self):
         conn = self.connect()
         if not conn:
@@ -46,6 +73,58 @@ class ClientData:
 
             df = pd.DataFrame(rows, columns=['id', 'Nome', 'Preço', 'Idade', 'Altura', 'Peso', 'Academia'])
             
+            return df
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
+    
+    def get_all_appointments(self, client_id):
+        conn = self.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+        
+        cur = conn.cursor()
+
+        try:
+            query = f"""SELECT c.client_name, p.personal_name, a.appointment_day, a.appointment_time FROM clients c
+                    JOIN personals p
+                    ON c.personal_id = p.personal_id
+                    JOIN clients_appointment a
+                    ON a.client_id = c.client_id
+                    WHERE c.client_id = {client_id}
+                    ORDER BY a.appointment_day, a.appointment_time ASC;"""
+            
+            cur.execute(query)
+            rows = cur.fetchall()
+
+            df = pd.DataFrame(rows, columns=['Aluno', 'Personal', 'Dia', 'Hora'])
+            return df
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
+    
+    def get_all_workouts(self, client_id):
+        conn = self.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+        
+        cur = conn.cursor()
+
+        try:
+            base_query = f"""SELECT e.exercise_name, e.number_of_sets, e.repetitions, e.weight, e.muscle_group 
+                            FROM exercises e
+                            JOIN clients c
+                            ON e.client_id = c.client_id
+                            WHERE c.client_id={client_id}"""
+            
+            cur.execute(base_query)
+            rows = cur.fetchall()
+
+            df = pd.DataFrame(rows, columns=['Exercicio', 'Séries', 'Repetições', 'Peso', 'Músculo'])
             return df
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)

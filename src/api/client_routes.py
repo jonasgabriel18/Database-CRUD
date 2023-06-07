@@ -21,43 +21,14 @@ def menu():
     
 @app.route("/clients")
 def show_all_clients():
-    conn = cli_manager.connect()
-    if not conn:
-        raise Exception("Erro na conexão com o database")
-
-    cur = conn.cursor()
-
-    try:
-        select_query = """SELECT c.client_name, c.age, c.weight, c.height, p.personal_name, g.gym_name
-                            FROM clients c
-                            LEFT JOIN personals p
-                            ON c.personal_id = p.personal_id
-                            LEFT JOIN gym g
-                            ON c.gym_id = g.gym_id;"""
-            
-        cur.execute(select_query)
-        rows = cur.fetchall()
-
-        df = pd.DataFrame(rows, columns=['Nome', 'Idade', 'Peso', 'Altura', 'Personal Trainer', 'Academia'])
-            
-        html_table_button = df_html(df)
-            
-        return render_template_string(html_table_button)
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        cur.close()
-        conn.close()
+    df = cli_manager.get_all_clients()
+    html_table_button = df_html(df)
+    return render_template_string(html_table_button)
     
 @app.route("/personals")
 def show_all_personals():
     df = cli_manager.get_all_personals()
-    html_df = df.to_html()
-    html_table_button = f"""
-                                        {html_df}
-                                        <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>
-                                        """
-        
+    html_table_button = df_html(df)
     return render_template_string(html_table_button)
 
 @app.route("/get-client/", methods=["GET", "POST"])
@@ -101,7 +72,8 @@ def register_client():
         try:
             cur.execute(insert_query, inserted_values)
             conn.commit()
-            return 'Cliente cadastrado com sucesso!'
+            return f"""Cliente cadastrado com sucesso!
+                        <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             conn.rollback()
@@ -132,7 +104,8 @@ def delete_client():
         client_name = request.form["client_name"]
         cli_manager.delete(client_name)
 
-        return "Client deletado com sucesso!"
+        return f"""Cliente deletado com sucesso!
+                    <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
     else:
         return render_template('get_client_name.html')
             
@@ -187,7 +160,8 @@ def select_schedule(client_name, personal_id):
             
             conn.commit()
 
-            return "Treino marcado com sucesso!"
+            return f"""Treino marcado com sucesso!
+                        <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
@@ -214,40 +188,18 @@ def make_appointment():
 @app.route('/appointments/', methods=["GET", "POST"])
 def show_appointment():
     if request.method == "POST":
-        conn = cli_manager.connect()
-        if not conn:
-            raise Exception("Erro na conexão com o database")
+        client_name = request.form.get('client_name')
+        client = cli_manager.get_client_by_name(client_name)
+        client_id = client.iloc[0]['id']
+
+        df = cli_manager.get_all_appointments(client_id)
+
+        if df.empty:
+            flash('Aluno não possui treinos marcados!')
+
+        html_table_button = df_html(df)
         
-        cur = conn.cursor()
-
-        try:
-            client_name = request.form.get('client_name')
-            client = cli_manager.get_client_by_name(client_name)
-            client_id = client.iloc[0]['id']
-
-            query = f"""SELECT c.client_name, p.personal_name, a.appointment_day, a.appointment_time FROM clients c
-                    JOIN personals p
-                    ON c.personal_id = p.personal_id
-                    JOIN clients_appointment a
-                    ON a.client_id = c.client_id
-                    WHERE c.client_id = {client_id}
-                    ORDER BY a.appointment_day, a.appointment_time ASC;"""
-            
-            cur.execute(query)
-            rows = cur.fetchall()
-
-            df = pd.DataFrame(rows, columns=['Aluno', 'Personal', 'Dia', 'Hora'])
-            if df.empty:
-                flash('Aluno não possui treinos marcados!')
-
-            html_table_button = df_html(df)
-        
-            return render_template_string(html_table_button)
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-        finally:
-            cur.close()
-            conn.close()
+        return render_template_string(html_table_button)
     else:
         return render_template('get_client_name.html')
 
@@ -255,35 +207,17 @@ def show_appointment():
 def show_client_workout():
     
     if request.method == "POST":
-        conn = cli_manager.connect()
-        if not conn:
-            raise Exception("Erro na conexão com o database")
-        
-        cur = conn.cursor()
+        client_name = request.form.get("client_name")
+        client = cli_manager.get_client_by_name(client_name)
+        client_id = client.iloc[0]['id']
 
-        try:
-            client_name = request.form.get("client_name")
-            client = cli_manager.get_client_by_name(client_name)
-            client_id = client.iloc[0]['id']
-            
-            base_query = f"""SELECT e.exercise_name, e.number_of_sets, e.repetitions, e.weight, e.muscle_group 
-                            FROM exercises e
-                            JOIN clients c
-                            ON e.client_id = c.client_id
-                            WHERE c.client_id={client_id}"""
-            
-            cur.execute(base_query)
-            rows = cur.fetchall()
+        df = cli_manager.get_all_workouts(client_id)
+        if df.empty:
+            flash('Aluno não possui treinos marcados!')
 
-            df = pd.DataFrame(rows, columns=['Exercicio', 'Séries', 'Repetições', 'Peso', 'Músculo'])
-            html_table_button = df_html(df)
+        html_table_button = df_html(df)
         
-            return render_template_string(html_table_button)
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-        finally:
-            cur.close()
-            conn.close()
+        return render_template_string(html_table_button)
     else:
         return render_template('get_client_name.html')
 
