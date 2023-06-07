@@ -2,6 +2,7 @@ import psycopg2
 import pandas as pd
 import os
 import sys
+import ast
 
 directory = os.path.dirname(os.path.abspath("__file__"))
 sys.path.append(os.path.dirname(os.path.dirname(directory)))
@@ -70,22 +71,34 @@ def register_client():
             return f"""Erro na operação!
                     <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
 
-@app.route("/update/", methods=["GET", "POST"])
-def update_client():
+@app.route("/update_info/<client_name>", methods=["GET", "POST"])
+def update_info(client_name):
     if request.method == "POST":
         updated = {key: value for key, value in request.form.items() if value}
-        client_name = request.form.get("client_name")
-        client = cli_manager.get_client_by_name(client_name)
-        client_id = client.iloc[0]['id']
-
-        cli_manager.update(client_id, list(updated.keys()), list(updated.values()))
-        client = cli_manager.get_client_by_id(client_id)
-        
-        html_table_button = df_html(client)
-        
-        return render_template_string(html_table_button)
+        return redirect(url_for("update", client_name=client_name, info=updated))
     else:
         return render_template('update_client.html')
+
+@app.route("/update_client/", methods=["GET", "POST"])
+def update_client():
+    if request.method == "POST":
+        client_name = request.form.get("client_name")
+        return redirect(url_for("update_info", client_name=client_name))
+    else:
+        return render_template('get_client_name.html')
+
+@app.route("/update/<client_name>/<info>")
+def update(client_name, info):
+    client = cli_manager.get_client_by_name(client_name)
+    info = ast.literal_eval(info)
+    print(type(info))
+    client_id = client.iloc[0]['id']
+
+    cli_manager.update(client_id, list(info.keys()), list(info.values()))
+    client = cli_manager.get_client_by_id(client_id)
+        
+    html_table_button = df_html(client)
+    return render_template_string(html_table_button)
 
 @app.route('/delete', methods=["GET", "POST"])
 def delete_client():
