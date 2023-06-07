@@ -47,11 +47,6 @@ def register_client():
     if request.method == 'GET':
         return render_template('register_client.html')
     elif request.method == 'POST':
-        conn = cli_manager.connect()
-        if not conn:
-            raise Exception("Erro na conexão com o database")
-        cur = conn.cursor()
-
         name = request.form.get('name')
         age = int(request.form.get('age'))
         weight = int(request.form.get('weight'))
@@ -65,21 +60,15 @@ def register_client():
 
         if height < 0:
             raise Exception("Altura não pode ser negativa")
+        
+        register_op = cli_manager.register(name, age, weight, height)
 
-        insert_query = """ INSERT INTO clients(client_name, age, weight, height) VALUES (%s,%s,%s,%s)"""
-        inserted_values = (name, age, weight, height)
-
-        try:
-            cur.execute(insert_query, inserted_values)
-            conn.commit()
+        if register_op:
             return f"""Cliente cadastrado com sucesso!
-                        <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-            conn.rollback()
-        finally:
-            cur.close()
-            conn.close()
+                    <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
+        else:
+            return f"""Erro na operação!
+                    <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
 
 @app.route("/update/", methods=["GET", "POST"])
 def update_client():
@@ -122,51 +111,14 @@ def select_personal(client_name):
 def select_schedule(client_name, personal_id):
     if request.method == "POST":
         schedule_id = int(request.form.get("schedule_index"))
-        conn = cli_manager.connect()
-        if not conn:
-            raise Exception("Erro na conexão com o database")
-        
-        cur = conn.cursor()
+        appointment_op = cli_manager.make_appointment(client_name, personal_id, schedule_id)
 
-        try:
-            client = cli_manager.get_client_by_name(client_name)
-            client_id = client.iloc[0]['id'].item()
-
-            selected_appointment = cli_manager.get_schedule_by_id(schedule_id)
-
-            personal = cli_manager.get_personal_by_id(personal_id)
-
-            update_personal_query = f"UPDATE personals_schedules SET is_available = false WHERE schedule_id = {schedule_id}"
-            cur.execute(update_personal_query)
-            time = selected_appointment.iloc[0]['time']
-            day = selected_appointment.iloc[0]['day']
-
-            insert_client_appointment = "INSERT INTO clients_appointment (client_id, appointment_time, appointment_day) VALUES(%s, %s, %s)"
-            cur.execute(insert_client_appointment, (client_id, time, day))
-            
-            update_client_query = "UPDATE clients SET personal_id = %s, gym_id = %s WHERE client_id = %s"
-            cur.execute(update_client_query, (int(personal_id), personal.iloc[0]['Academia'].item(), client_id))
-            
-            search_exercises_query = f"SELECT * FROM clients c JOIN exercises e ON c.client_id = e.client_id WHERE c.client_id={client_id};"
-            cur.execute(search_exercises_query)
-            rows = cur.fetchall()
-            
-            if not rows:
-                exercises = random_workout_generator()
-                for exercise in exercises:
-                    exercise_query = f"""INSERT INTO exercises(client_id, exercise_name, number_of_sets, repetitions, weight, muscle_group)
-                                        VALUES ({client_id}, %s, %s, %s, %s, %s);"""
-                    cur.execute(exercise_query, exercise)
-            
-            conn.commit()
-
+        if appointment_op:
             return f"""Treino marcado com sucesso!
                         <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-        finally:
-            cur.close()
-            conn.close()
+        else:
+            return f"""Erro!!!
+                        <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
     else:
         schedule = cli_manager.get_available_schedule(personal_id)
         return render_template("select_schedule.html", client_name=client_name, personal_id=personal_id, schedule=schedule)

@@ -2,6 +2,7 @@ import psycopg2
 import pandas as pd
 import os
 from dotenv import load_dotenv
+from .utils import random_workout_generator
 
 load_dotenv()
             
@@ -242,6 +243,28 @@ class ClientData:
             cur.close()
             conn.close()
     
+    def register(self, name, age, weight, height):
+        conn = self.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+        
+        cur = conn.cursor()
+
+        try:
+            register_query = """ INSERT INTO clients(client_name, age, weight, height) VALUES (%s,%s,%s,%s)"""
+            cur.execute(register_query, (name, age, weight, height))
+            conn.commit()
+
+            return True
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            conn.rollback()
+            return False
+        finally:
+            cur.close()
+            conn.close()
+
+    
     def update(self, client_id, columns_to_update, new_values):
         conn = self.connect()
         if not conn:
@@ -297,6 +320,53 @@ class ClientData:
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             conn.rollback()
+        finally:
+            cur.close()
+            conn.close()
+
+    def make_appointment(self, client_name, personal_id, schedule_id):
+        conn = self.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+        
+        cur = conn.cursor()
+
+        try:
+            client = self.get_client_by_name(client_name)
+            client_id = client.iloc[0]['id'].item()
+
+            selected_appointment = self.get_schedule_by_id(schedule_id)
+
+            personal = self.get_personal_by_id(personal_id)
+
+            update_personal_query = f"UPDATE personals_schedules SET is_available = false WHERE schedule_id = {schedule_id}"
+            cur.execute(update_personal_query)
+            time = selected_appointment.iloc[0]['time']
+            day = selected_appointment.iloc[0]['day']
+
+            insert_client_appointment = "INSERT INTO clients_appointment (client_id, appointment_time, appointment_day) VALUES(%s, %s, %s)"
+            cur.execute(insert_client_appointment, (client_id, time, day))
+            
+            update_client_query = "UPDATE clients SET personal_id = %s, gym_id = %s WHERE client_id = %s"
+            cur.execute(update_client_query, (int(personal_id), personal.iloc[0]['Academia'].item(), client_id))
+            
+            search_exercises_query = f"SELECT * FROM clients c JOIN exercises e ON c.client_id = e.client_id WHERE c.client_id={client_id};"
+            cur.execute(search_exercises_query)
+            rows = cur.fetchall()
+            
+            if not rows:
+                exercises = random_workout_generator()
+                for exercise in exercises:
+                    exercise_query = f"""INSERT INTO exercises(client_id, exercise_name, number_of_sets, repetitions, weight, muscle_group)
+                                        VALUES ({client_id}, %s, %s, %s, %s, %s);"""
+                    cur.execute(exercise_query, exercise)
+            
+            conn.commit()
+            return True
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            conn.rollback()
+            return False
         finally:
             cur.close()
             conn.close()
