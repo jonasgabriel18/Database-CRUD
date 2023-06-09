@@ -101,6 +101,28 @@ class DataManager():
             cur.close()
             conn.close()
     
+    def get_personal_by_name(self, personal_name):
+        conn = self.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+        
+        cur = conn.cursor()
+
+        try:
+            personal_name = personal_name.title()
+            select_client_query = f"SELECT * FROM personals WHERE personal_name = '{personal_name}'"
+            cur.execute(select_client_query)
+            rows = cur.fetchall()
+
+            df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'age', 'height', 'weight', 'gym', 'from_mari'])
+
+            return df
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
+    
     def get_client_by_name(self, client_name):
         conn = self.connect()
         if not conn:
@@ -109,6 +131,7 @@ class DataManager():
         cur = conn.cursor()
 
         try:
+            client_name = client_name.title()
             select_client_query = f"SELECT * FROM clients WHERE client_name = '{client_name}'"
             cur.execute(select_client_query)
             rows = cur.fetchall()
