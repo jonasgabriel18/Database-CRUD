@@ -124,7 +124,6 @@ class ClientData(DataManager):
         finally:
             cur.close()
             conn.close()
-
     
     def update(self, client_id, columns_to_update, new_values):
         conn = self.connect()
