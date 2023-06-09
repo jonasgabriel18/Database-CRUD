@@ -91,7 +91,6 @@ def update_client():
 def update(client_name, info):
     client = cli_manager.get_client_by_name(client_name)
     info = ast.literal_eval(info)
-    print(type(info))
     client_id = client.iloc[0]['id']
 
     cli_manager.update(client_id, list(info.keys()), list(info.values()))
