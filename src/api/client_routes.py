@@ -83,7 +83,7 @@ def update_info(client_name):
     else:
         return render_template('update_client.html')
 
-@app.route("/update_client/", methods=["GET", "POST"])
+@app.route("/update-client/", methods=["GET", "POST"])
 def update_client():
     if request.method == "POST":
         client_name = request.form.get("client_name")
@@ -112,7 +112,7 @@ def update(client_name, info):
     html_table_button = df_html(client)
     return render_template_string(html_table_button)
 
-@app.route('/delete', methods=["GET", "POST"])
+@app.route('/delete-client', methods=["GET", "POST"])
 def delete_client():
     if request.method == "POST":
         client_name = request.form["client_name"]
@@ -164,7 +164,7 @@ def make_appointment():
     else:
         return render_template("get_client_name.html")
     
-@app.route('/appointments/', methods=["GET", "POST"])
+@app.route('/appointments-clients/', methods=["GET", "POST"])
 def show_appointment():
     if request.method == "POST":
         client_name = request.form.get('client_name')

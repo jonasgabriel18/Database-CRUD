@@ -13,7 +13,7 @@ class PersonalData(DataManager):
 
         try:
             register_query = """INSERT INTO personals(personal_name, price, age, height, weight, gym_id, from_mari)
-                                VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
+                                VALUES (%s,%s,%s,%s,%s,%s,%s)"""
             cur.execute(register_query, (name, price, age, height, weight, gym_id, from_mari))
             conn.commit()
 
