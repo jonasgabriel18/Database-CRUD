@@ -136,7 +136,7 @@ class ClientData(DataManager):
             base_query = "UPDATE clients SET "
 
             for i, column in enumerate(columns_to_update):
-                if new_values[i][0] == '-' and int(new_values[i]) < 0:
+                if type(new_values[i]) != bool and new_values[i][0] == '-' and int(new_values[i]) < 0:
                     raise Exception("Valores negativos não são permitidos")
                 
                 if column == 'name':

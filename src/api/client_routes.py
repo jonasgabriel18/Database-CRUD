@@ -52,7 +52,6 @@ def register_client():
         age = int(request.form.get('age'))
         weight = int(request.form.get('weight'))
         height = int(request.form.get('height'))
-        print(request.form.get('is_flamengo'))
         is_flamengo = request.form.get('is_flamengo') == 'on'
         from_souza = request.form.get('from_souza') == 'on'
         watch_one_piece = request.form.get('watch_one_piece') == 'on'
@@ -95,6 +94,13 @@ def update_client():
 def update(client_name, info):
     client = cli_manager.get_client_by_name(client_name)
     info = ast.literal_eval(info)
+
+    info = {
+        'is_flamengo': info.get('is_flamengo', 'off') == 'on',
+        'from_souza': info.get('from_souza', 'off') == 'on',
+        'watch_one_piece': info.get('watch_one_piece', 'off') == 'on',
+    }
+    
     client_id = client.iloc[0]['id']
 
     cli_manager.update(client_id, list(info.keys()), list(info.values()))
