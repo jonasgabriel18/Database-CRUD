@@ -52,6 +52,10 @@ def register_client():
         age = int(request.form.get('age'))
         weight = int(request.form.get('weight'))
         height = int(request.form.get('height'))
+        print(request.form.get('is_flamengo'))
+        is_flamengo = request.form.get('is_flamengo') == 'on'
+        from_souza = request.form.get('from_souza') == 'on'
+        watch_one_piece = request.form.get('watch_one_piece') == 'on'
 
         if age < 0:
             raise Exception("Idade não pode ser negativa")
@@ -62,7 +66,7 @@ def register_client():
         if height < 0:
             raise Exception("Altura não pode ser negativa")
         
-        register_op = cli_manager.register(name, age, weight, height)
+        register_op = cli_manager.register(name, age, weight, height, is_flamengo, from_souza, watch_one_piece)
 
         if register_op:
             return f"""Cliente cadastrado com sucesso!

@@ -36,7 +36,7 @@ class DataManager():
         cur = conn.cursor()
 
         try:
-            select_query = """SELECT c.client_name, c.age, c.weight, c.height, p.personal_name, g.gym_name
+            select_query = """SELECT c.client_name, c.age, c.weight, c.height, p.personal_name, g.gym_name, c.balance, c.is_flamengo, c.from_souza, c.watch_one_piece
                             FROM clients c
                             LEFT JOIN personals p
                             ON c.personal_id = p.personal_id
@@ -46,7 +46,7 @@ class DataManager():
             cur.execute(select_query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['Nome', 'Idade', 'Peso', 'Altura', 'Personal Trainer', 'Academia'])
+            df = pd.DataFrame(rows, columns=['name', 'age', 'weight', 'height', 'personal', 'gym', 'balance', 'is_flamengo', 'from_souza', 'watch_one_piece'])
             
             return df
         except (Exception, psycopg2.DatabaseError) as error:
@@ -63,7 +63,7 @@ class DataManager():
         cur = conn.cursor()
 
         try:
-            select_query = """SELECT p.personal_id, p.personal_name, p.price, p.age, p.height, p.weight, g.gym_name
+            select_query = """SELECT p.personal_id, p.personal_name, p.price, p.age, p.height, p.weight, g.gym_name, p.from_mari
                               FROM personals p
                               JOIN gym g
                               ON p.gym_id = g.gym_id;"""
@@ -71,7 +71,7 @@ class DataManager():
             cur.execute(select_query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['id', 'Nome', 'Preço', 'Idade', 'Altura', 'Peso', 'Academia'])
+            df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'age', 'height', 'weight', 'gym', 'from_mari'])
             
             return df
         except (Exception, psycopg2.DatabaseError) as error:
@@ -92,7 +92,7 @@ class DataManager():
             cur.execute(select_client_query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['id', 'Nome', 'Preço', 'Idade', 'Altura', 'Peso', 'Academia'])
+            df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'age', 'height', 'weight', 'gym', 'from_mari'])
 
             return df
         except (Exception, psycopg2.DatabaseError) as error:
@@ -113,7 +113,7 @@ class DataManager():
             cur.execute(select_client_query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym'])
+            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym', 'balance', 'is_flamengo', 'from_souza', 'watch_one_piece'])
 
             return df
         except (Exception, psycopg2.DatabaseError) as error:
@@ -134,7 +134,7 @@ class DataManager():
             cur.execute(select_client_query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym'])
+            df = pd.DataFrame(rows, columns=['id', 'name', 'age', 'weight', 'height', 'personal_id', 'gym', 'balance', 'is_flamengo', 'from_souza', 'watch_one_piece'])
 
             return df
         except (Exception, psycopg2.DatabaseError) as error:

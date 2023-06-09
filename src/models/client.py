@@ -24,7 +24,7 @@ class ClientData(DataManager):
             cur.execute(query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['Aluno', 'Personal', 'Dia', 'Hora'])
+            df = pd.DataFrame(rows, columns=['client', 'personal', 'day', 'time'])
             return df
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
@@ -49,7 +49,7 @@ class ClientData(DataManager):
             cur.execute(base_query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['Exercicio', 'Séries', 'Repetições', 'Peso', 'Músculo'])
+            df = pd.DataFrame(rows, columns=['exercise', 'sets', 'repetitions', 'weight', 'muscle'])
             return df
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
@@ -104,7 +104,7 @@ class ClientData(DataManager):
             cur.close()
             conn.close()
     
-    def register(self, name, age, weight, height):
+    def register(self, name, age, weight, height, is_flamengo, from_souza, watch_one_piece):
         conn = self.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
@@ -112,8 +112,8 @@ class ClientData(DataManager):
         cur = conn.cursor()
 
         try:
-            register_query = """ INSERT INTO clients(client_name, age, weight, height) VALUES (%s,%s,%s,%s)"""
-            cur.execute(register_query, (name, age, weight, height))
+            register_query = """ INSERT INTO clients(client_name, age, weight, height, is_flamengo, from_souza, watch_one_piece) VALUES (%s,%s,%s,%s,%s,%s,%s)"""
+            cur.execute(register_query, (name, age, weight, height, is_flamengo, from_souza, watch_one_piece))
             conn.commit()
 
             return True
