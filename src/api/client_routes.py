@@ -132,8 +132,9 @@ def select_personal(client_name):
 @app.route('/select-schedule/<client_name>/<personal_id>', methods=["GET", "POST"])
 def select_schedule(client_name, personal_id):
     if request.method == "POST":
-        schedule_id = int(request.form.get("schedule_index"))
-        appointment_op = cli_manager.make_appointment(client_name, personal_id, schedule_id)
+        schedule_id = request.form.getlist("schedule_index")
+        schedule_indexes = list(map(int, schedule_id))
+        appointment_op = cli_manager.insert_appointments(client_name, personal_id, schedule_indexes)
 
         if appointment_op:
             return f"""Treino marcado com sucesso!

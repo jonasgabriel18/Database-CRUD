@@ -209,7 +209,7 @@ class ClientData(DataManager):
             cur.execute(insert_client_appointment, (client_id, time, day))
             
             update_client_query = "UPDATE clients SET personal_id = %s, gym_id = %s WHERE client_id = %s"
-            cur.execute(update_client_query, (int(personal_id), personal.iloc[0]['Academia'].item(), client_id))
+            cur.execute(update_client_query, (int(personal_id), personal.iloc[0]['gym'].item(), client_id))
             
             search_exercises_query = f"SELECT * FROM clients c JOIN exercises e ON c.client_id = e.client_id WHERE c.client_id={client_id};"
             cur.execute(search_exercises_query)
@@ -231,3 +231,11 @@ class ClientData(DataManager):
         finally:
             cur.close()
             conn.close()
+    
+    def insert_appointments(self, client_name, personal_id, schedule_indexes):
+        op_result = True
+        for schedule_id in schedule_indexes:
+            op = self.make_appointment(client_name, personal_id, schedule_id)
+            op_result = op_result == op
+        
+        return op_result

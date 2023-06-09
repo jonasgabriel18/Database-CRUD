@@ -11,7 +11,7 @@
     <form method="POST" action="{{ url_for('select_personal', client_name=client_name, all_personals=all_personals) }}">
         {% for index, row in all_personals.iterrows() %}
             <input type="radio" name="personal_id" value="{{ row['id'] }}"> 
-            {{ row['Nome'] }} <br>
+            {{ row['name'] }} <br>
         {% endfor %}
         <br>
         <input type="submit" value="Selecionar">

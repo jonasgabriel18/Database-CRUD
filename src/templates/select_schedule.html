@@ -11,7 +11,7 @@
     <h2>Horários Disponíveis:</h2>
     <form method="POST" action="{{ url_for('select_schedule', client_name=client_name, personal_id=personal_id) }}">
         {% for index, row in schedule.iterrows() %}
-            <input type="radio" name="schedule_index" value="{{ row['id'] }}"> 
+            <input type="checkbox" name="schedule_index" value="{{ row['id'] }}" > 
             {{ row['time'] }} - {{ row['day'] }} <br>
         {% endfor %}
         <br>
