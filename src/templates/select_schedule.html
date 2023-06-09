@@ -15,6 +15,20 @@
             {{ row['time'] }} - {{ row['day'] }} <br>
         {% endfor %}
         <br>
+        <h2>Forma de Pagamento:</h2>
+        <label>
+            <input type="radio" name="payment_method" value="cartao"> Cartão
+        </label>
+        <label>
+            <input type="radio" name="payment_method" value="boleto"> Boleto
+        </label>
+        <label>
+            <input type="radio" name="payment_method" value="pix"> Pix
+        </label>
+        <label>
+            <input type="radio" name="payment_method" value="berries"> Pix
+        </label>
+        <br>
         <input type="submit" value="Selecionar">
     </form>
 

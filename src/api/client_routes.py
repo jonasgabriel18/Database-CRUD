@@ -52,6 +52,7 @@ def register_client():
         age = int(request.form.get('age'))
         weight = int(request.form.get('weight'))
         height = int(request.form.get('height'))
+        balance = int(request.form.get('balance'))
         is_flamengo = request.form.get('is_flamengo') == 'on'
         from_souza = request.form.get('from_souza') == 'on'
         watch_one_piece = request.form.get('watch_one_piece') == 'on'
@@ -65,7 +66,7 @@ def register_client():
         if height < 0:
             raise Exception("Altura não pode ser negativa")
         
-        register_op = cli_manager.register(name, age, weight, height, is_flamengo, from_souza, watch_one_piece)
+        register_op = cli_manager.register(name, age, weight, height, balance, is_flamengo, from_souza, watch_one_piece)
 
         if register_op:
             return f"""Cliente cadastrado com sucesso!
@@ -95,11 +96,13 @@ def update(client_name, info):
     client = cli_manager.get_client_by_name(client_name)
     info = ast.literal_eval(info)
 
-    info = {
+    booleans_info = {
         'is_flamengo': info.get('is_flamengo', 'off') == 'on',
         'from_souza': info.get('from_souza', 'off') == 'on',
         'watch_one_piece': info.get('watch_one_piece', 'off') == 'on',
     }
+
+    info.update(booleans_info)
     
     client_id = client.iloc[0]['id']
 
@@ -134,7 +137,8 @@ def select_schedule(client_name, personal_id):
     if request.method == "POST":
         schedule_id = request.form.getlist("schedule_index")
         schedule_indexes = list(map(int, schedule_id))
-        appointment_op = cli_manager.insert_appointments(client_name, personal_id, schedule_indexes)
+        payment_form = request.form.get("payment_method")
+        appointment_op = cli_manager.insert_appointments(client_name, personal_id, schedule_indexes, payment_form)
 
         if appointment_op:
             return f"""Treino marcado com sucesso!

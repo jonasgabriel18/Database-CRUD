@@ -13,7 +13,7 @@ class ClientData(DataManager):
         cur = conn.cursor()
 
         try:
-            query = f"""SELECT c.client_name, p.personal_name, a.appointment_day, a.appointment_time FROM clients c
+            query = f"""SELECT c.client_name, p.personal_name, a.appointment_day, a.appointment_time, a.payment_form, a.value_payed FROM clients c
                     JOIN personals p
                     ON c.personal_id = p.personal_id
                     JOIN clients_appointment a
@@ -24,7 +24,7 @@ class ClientData(DataManager):
             cur.execute(query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['client', 'personal', 'day', 'time'])
+            df = pd.DataFrame(rows, columns=['client', 'personal', 'day', 'time', 'payment_form', 'value'])
             return df
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
@@ -104,7 +104,7 @@ class ClientData(DataManager):
             cur.close()
             conn.close()
     
-    def register(self, name, age, weight, height, is_flamengo, from_souza, watch_one_piece):
+    def register(self, name, age, weight, height, balance, is_flamengo, from_souza, watch_one_piece):
         conn = self.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
@@ -112,8 +112,8 @@ class ClientData(DataManager):
         cur = conn.cursor()
 
         try:
-            register_query = """ INSERT INTO clients(client_name, age, weight, height, is_flamengo, from_souza, watch_one_piece) VALUES (%s,%s,%s,%s,%s,%s,%s)"""
-            cur.execute(register_query, (name, age, weight, height, is_flamengo, from_souza, watch_one_piece))
+            register_query = """ INSERT INTO clients(client_name, age, weight, height, balance, is_flamengo, from_souza, watch_one_piece) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
+            cur.execute(register_query, (name, age, weight, height, balance, is_flamengo, from_souza, watch_one_piece))
             conn.commit()
 
             return True
@@ -185,7 +185,7 @@ class ClientData(DataManager):
             cur.close()
             conn.close()
 
-    def make_appointment(self, client_name, personal_id, schedule_id):
+    def make_appointment(self, client_name, personal_id, schedule_id, cost_per_appointment, payment_form):
         conn = self.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
@@ -205,8 +205,9 @@ class ClientData(DataManager):
             time = selected_appointment.iloc[0]['time']
             day = selected_appointment.iloc[0]['day']
 
-            insert_client_appointment = "INSERT INTO clients_appointment (client_id, appointment_time, appointment_day) VALUES(%s, %s, %s)"
-            cur.execute(insert_client_appointment, (client_id, time, day))
+            insert_client_appointment = """INSERT INTO clients_appointment (client_id, appointment_time, appointment_day, value_payed, payment_form) 
+                                        VALUES(%s, %s, %s, %s, %s)"""
+            cur.execute(insert_client_appointment, (client_id, time, day, cost_per_appointment, payment_form))
             
             update_client_query = "UPDATE clients SET personal_id = %s, gym_id = %s WHERE client_id = %s"
             cur.execute(update_client_query, (int(personal_id), personal.iloc[0]['gym'].item(), client_id))
@@ -232,10 +233,50 @@ class ClientData(DataManager):
             cur.close()
             conn.close()
     
-    def insert_appointments(self, client_name, personal_id, schedule_indexes):
+    def insert_appointments(self, client_name, personal_id, schedule_indexes, payment_method):
+        conn = self.connect()
+        if not conn:
+            return None
+        cur = conn.cursor()
+
+        try:
+            client = self.get_client_by_name(client_name)
+            personal = self.get_personal_by_id(personal_id)
+            client_id = client.iloc[0]['id']
+
+            balance = client.iloc[0]['balance']
+            price = personal.iloc[0]['price']
+
+            total_cost = len(schedule_indexes) * price
+
+            if client.iloc[0]['is_flamengo']:
+                total_cost *= 0.95
+            
+            if client.iloc[0]['from_souza']:
+                total_cost *= 0.95
+            
+            if client.iloc[0]['watch_one_piece']:
+                total_cost *= 0.95
+
+            if total_cost > balance:
+                return False
+            
+            new_balance = balance - total_cost
+            cost_per_appointment = total_cost//len(schedule_indexes)
+            update_balance_query = f"UPDATE clients SET balance = {new_balance} WHERE client_id={client_id};"
+            cur.execute(update_balance_query)
+            conn.commit()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            conn.rollback()
+            return False
+        finally:
+            cur.close()
+            conn.close()
+
         op_result = True
         for schedule_id in schedule_indexes:
-            op = self.make_appointment(client_name, personal_id, schedule_id)
+            op = self.make_appointment(client_name, personal_id, schedule_id, cost_per_appointment, payment_method)
             op_result = op_result == op
         
         return op_result
