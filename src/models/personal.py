@@ -70,9 +70,8 @@ class PersonalData(DataManager):
 
         try:
             personal = self.get_personal_by_name(personal_name)
-            if personal is None:
-                raise Exception("ID do personal retornou vazio")
-            
+            if personal.empty:
+                return Exception("ID do personal retornou vazio")
             personal_id = personal.iloc[0]['id']
 
             delete_query = f"DELETE FROM personals WHERE personal_id = {personal_id}"
