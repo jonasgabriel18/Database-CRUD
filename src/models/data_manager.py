@@ -107,7 +107,7 @@ class DataManager():
             raise Exception("Erro na conexão com o database")
         
         cur = conn.cursor()
-
+        
         try:
             personal_name = personal_name.title()
             select_client_query = f"SELECT * FROM personals WHERE personal_name = '{personal_name}'"

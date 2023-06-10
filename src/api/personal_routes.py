@@ -18,9 +18,9 @@ app = Flask(__name__, template_folder=template_dir)
 cli_manager = ClientData()
 per_manager = PersonalData()
 
-#@app.route('/')
-#def menu():
-    #return render_template('menu.html')
+@app.route('/')
+def menu():
+    return render_template('menu_personals.html')
 
 @app.route('/register-personal', methods=["GET", "POST"])       
 def register_personal():
@@ -98,9 +98,28 @@ def delete_personal():
         personal_name = request.form["personal_name"]
         per_manager.delete(personal_name)
 
-        return f"""Personal deletado com sucesso!"""
-        #return f"""Personal deletado com sucesso!
+        return f"""Personal deletado com sucesso!
                     #<a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
+    else:
+        return render_template('get_personal_name.html')
+
+@app.route('/schedule-personal', methods=["GET", "POST"])#todos os horários
+def schedule_personal():
+    if request.method == "POST":
+        personal_name = request.form["personal_name"]
+        schedule = per_manager.get_personal_schedules(personal_name)
+        
+        return schedule.to_html()
+    else:
+        return render_template('get_personal_name.html')
+
+@app.route('/appointments-personal', methods=["GET", "POST"])#treinos ja marcados
+def appointments_personal():
+    if request.method == "POST":
+        personal_name = request.form["personal_name"]
+        schedule = per_manager.get_personal_appointments(personal_name)
+        
+        return schedule.to_html()
     else:
         return render_template('get_personal_name.html')
 
