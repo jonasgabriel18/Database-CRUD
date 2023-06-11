@@ -17,7 +17,7 @@ template_dir = os.path.abspath('../templates')
 client_routes = Blueprint('client_routes', __name__)
 cli_manager = ClientData()
     
-@client_routes.route('/')
+@client_routes.route('/menu-clients')
 def menu():
     return render_template('menu.html')
     

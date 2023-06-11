@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint
+from flask import Flask, Blueprint, render_template
 import os
 import sys
 
@@ -17,6 +17,10 @@ template_dir = os.path.abspath('../templates')
 
 app = Flask(__name__, template_folder=template_dir)
 app.register_blueprint(api_blueprint)
+
+@app.route('/')
+def main_menu():
+    return render_template('main_menu.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
