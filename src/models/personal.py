@@ -247,3 +247,35 @@ class PersonalData(DataManager):
         finally:
             cur.close()
             conn.close()
+    
+    def get_personal_stats(self, personal_name):
+        personal = self.get_personal_by_name(personal_name)
+        personal_id = personal.iloc[0]['id']
+
+        conn = self.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+        
+        cur = conn.cursor()
+
+        try:
+            get_stats_query = f"""SELECT p.personal_name, s.*
+                                FROM personals p
+                                LEFT JOIN personal_statistics s ON p.personal_id = s.personal_id
+                                WHERE p.personal_id = {personal_id};"""
+            
+            cur.execute(get_stats_query)
+            stats = cur.fetchall()
+            
+            df_stats = pd.DataFrame(stats, columns=['name', 's_id', 'p_id', 'qtd_clients', 'qtd_workouts', 'balance'])
+            df_stats.drop(['s_id', 'p_id'], axis=1, inplace=True)
+
+            if df_stats.empty:
+                raise Exception("O personal não possui treinos marcados")
+
+            return df_stats
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()

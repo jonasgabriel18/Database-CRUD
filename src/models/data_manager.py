@@ -80,6 +80,28 @@ class DataManager():
             cur.close()
             conn.close()
     
+    def get_all_gyms(self):
+        conn = self.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+
+        cur = conn.cursor()
+
+        try:
+            select_query = """SELECT * FROM gym;"""
+            
+            cur.execute(select_query)
+            rows = cur.fetchall()
+
+            df = pd.DataFrame(rows, columns=['gym_id', 'name', 'address', 'opening_time', 'closing_time', 'fee']).set_index('gym_id')
+            
+            return df
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
+    
     def get_personal_by_id(self, personal_id):
         conn = self.connect()
         if not conn:

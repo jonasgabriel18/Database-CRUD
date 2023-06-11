@@ -22,6 +22,29 @@ per_manager = PersonalData()
 def menu():
     return render_template('menu_personals.html')
 
+@app.route("/personals")
+def show_all_personals():
+    df = cli_manager.get_all_personals()
+    html_table_button = df_html(df)
+    return render_template_string(html_table_button)
+
+@app.route("/gyms")
+def show_all_gyms():
+    df = cli_manager.get_all_gyms()
+    html_table_button = df_html(df)
+    return render_template_string(html_table_button)
+
+@app.route("/get-personal/", methods=["GET", "POST"])
+def show_one_personal():
+    if request.method == "POST":
+        personal_name = request.form.get('personal_name')
+        personal = per_manager.get_personal_by_name(personal_name)
+        html_table_button = df_html(personal)
+        
+        return render_template_string(html_table_button)
+    else:
+        return render_template('get_personal_name.html')
+
 @app.route('/register-personal', methods=["GET", "POST"])       
 def register_personal():
     if request.method == 'GET':
@@ -48,12 +71,10 @@ def register_personal():
         register_op = per_manager.register(name, price, age, height, weight, gym_id, from_mari)
 
         if register_op:
-            return f"""Personal cadastrado com sucesso!"""
-            #return f"""Personal cadastrado com sucesso!
+            return f"""Personal cadastrado com sucesso!
                     #<a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
         else:
-            return f"""Erro na operação!"""
-            #return f"""Erro na operação!
+            return f"""Erro na operação!
                     #<a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
 
 @app.route("/update_info/<personal_name>", methods=["GET", "POST"])
@@ -89,8 +110,7 @@ def update(personal_name, info):
     personal = per_manager.get_personal_by_id(personal_id)
         
     html_table_button = df_html(personal)
-    #return render_template_string(html_table_button)
-    return personal.to_html()
+    return render_template_string(html_table_button)
 
 @app.route('/delete-personal', methods=["GET", "POST"])
 def delete_personal():
@@ -108,8 +128,13 @@ def schedule_personal():
     if request.method == "POST":
         personal_name = request.form["personal_name"]
         schedule = per_manager.get_personal_schedules(personal_name)
-        
-        return schedule.to_html()
+
+        if schedule.empty:
+            return f"""Personal ainda não definiu seus horários!
+                    <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
+
+        df_sched = df_html(schedule)
+        return render_template_string(df_sched)
     else:
         return render_template('get_personal_name.html')
 
@@ -118,8 +143,23 @@ def appointments_personal():
     if request.method == "POST":
         personal_name = request.form["personal_name"]
         schedule = per_manager.get_personal_appointments(personal_name)
+
+        if schedule.empty:
+            return f"""Personal não possui agendamentos!
+                    <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
         
-        return schedule.to_html()
+        df_sched = df_html(schedule)
+        return render_template_string(df_sched)
+    else:
+        return render_template('get_personal_name.html')
+
+@app.route('/personal-statistics', methods=["GET", "POST"])
+def personal_statistics():
+    if request.method == "POST":
+        personal_name = request.form.get("personal_name")
+        stats = per_manager.get_personal_stats(personal_name)
+        df_stats = df_html(stats)
+        return render_template_string(df_stats)
     else:
         return render_template('get_personal_name.html')
 

@@ -6,11 +6,15 @@
 <body>
     <h1>Menu</h1>
     <ul>
+        <li><a href="{{ url_for('show_all_personals') }}">Mostrar todos os personais</a></li>
+        <li><a href="{{ url_for('show_all_gyms') }}">Mostrar todas as academias</a></li>
+        <li><a href="{{ url_for('show_one_personal') }}">Mostrar um personal</a></li>
         <li><a href="{{ url_for('register_personal') }}">Registrar novo personal</a></li>
         <li><a href="{{ url_for('update_personal') }}">Atualizar personal</a></li>
         <li><a href="{{ url_for('delete_personal')  }}">Deletar personal</a></li>
         <li><a href="{{ url_for('appointments_personal')  }}">Horário do personal</a></li>
         <li><a href="{{ url_for('schedule_personal')  }}">Treinos marcados</a></li>
+        <li><a href="{{ url_for('personal_statistics')  }}">Estatísticas do personal</a></li>
     </ul>
 </body>
 </html>
