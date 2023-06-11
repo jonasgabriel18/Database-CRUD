@@ -163,5 +163,32 @@ def personal_statistics():
     else:
         return render_template('get_personal_name.html')
 
+@app.route('/add-schedule', methods=["GET", "POST"])
+def insert_schedule():
+    if request.method == "POST":
+        personal_name = request.form.get("personal_name")
+        return redirect(url_for('select_day', personal_name=personal_name))
+    else:
+        return render_template('get_personal_name.html')
+
+@app.route("/select-day/<personal_name>", methods=["GET", "POST"])
+def select_day(personal_name):
+    if request.method == "POST":
+        day = request.form.get("day")
+        return redirect(url_for('select_time', personal_name=personal_name, day=day))
+    else:
+        return render_template('get_day.html')
+
+@app.route("/select-time/<personal_name>/<day>", methods=["GET", "POST"])
+def select_time(personal_name, day):
+    if request.method == "POST":
+        time = request.form.get('time')
+        per_manager.add_schedule_time(personal_name, day, time)
+
+        return f"""Horário marcado com sucesso!
+                    <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
+    else:
+        return render_template('get_time.html')
+
 if __name__ == '__main__':
     app.run(debug=True)

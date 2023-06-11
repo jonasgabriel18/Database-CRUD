@@ -279,3 +279,25 @@ class PersonalData(DataManager):
         finally:
             cur.close()
             conn.close()
+    
+    def add_schedule_time(self, personal_name, day, time):
+        personal = self.get_personal_by_name(personal_name)
+        personal_id = personal.iloc[0]['id'].item()
+
+        conn = self.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+        
+        cur = conn.cursor()
+
+        try:
+            insert_schedule_query = """INSERT INTO personals_schedules (schedule_time, schedule_day, is_available, personal_id)
+                                        VALUES (%s,%s,%s,%s)"""
+            
+            cur.execute(insert_schedule_query, (time, day, True, personal_id))
+            conn.commit()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
