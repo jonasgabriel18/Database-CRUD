@@ -108,6 +108,14 @@ def df_html(df):
     html_df = df.to_html()
     html_table_button = f"""
                         {html_df}
-                        <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
+                        <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
+    
+    return html_table_button
+
+def df_html_personal(df):
+    html_df = df.to_html()
+    html_table_button = f"""
+                        {html_df}
+                        <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
     
     return html_table_button

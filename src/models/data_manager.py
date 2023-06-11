@@ -88,7 +88,7 @@ class DataManager():
         cur = conn.cursor()
 
         try:
-            select_query = """SELECT * FROM gym;"""
+            select_query = """SELECT * FROM Academias;"""
             
             cur.execute(select_query)
             rows = cur.fetchall()

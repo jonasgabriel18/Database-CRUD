@@ -9,7 +9,7 @@
     <p>Personal Trainer ID: {{ personal_id }}</p>
     
     <h2>Horários Disponíveis:</h2>
-    <form method="POST" action="{{ url_for('select_schedule', client_name=client_name, personal_id=personal_id) }}">
+    <form method="POST" action="{{ url_for('api.client_routes.select_schedule', client_name=client_name, personal_id=personal_id) }}">
         {% for index, row in schedule.iterrows() %}
             <input type="checkbox" name="schedule_index" value="{{ row['id'] }}" > 
             {{ row['time'] }} - {{ row['day'] }} <br>
@@ -26,12 +26,12 @@
             <input type="radio" name="payment_method" value="pix"> Pix
         </label>
         <label>
-            <input type="radio" name="payment_method" value="berries"> Pix
+            <input type="radio" name="payment_method" value="berries"> Berries
         </label>
         <br>
         <input type="submit" value="Selecionar">
     </form>
 
-    <a href="{{ url_for('menu') }}">Voltar ao Menu Principal</a>
+    <a href="{{ url_for('api.client_routes.menu') }}">Voltar ao Menu Principal</a>
 </body>
 </html>

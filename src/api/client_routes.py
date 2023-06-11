@@ -10,29 +10,30 @@ sys.path.append(os.path.dirname(os.path.dirname(directory)))
 from src.models.utils import random_workout_generator, df_html
 from src.models.client import ClientData
 
-from flask import Flask, request, render_template, redirect, url_for, flash, render_template_string
+from flask import Flask, request, render_template, redirect, url_for, flash, render_template_string, Blueprint
 
 template_dir = os.path.abspath('../templates')
-app = Flask(__name__, template_folder=template_dir)
+#app = Flask(__name__, template_folder=template_dir)
+client_routes = Blueprint('client_routes', __name__)
 cli_manager = ClientData()
     
-@app.route('/')
+@client_routes.route('/')
 def menu():
     return render_template('menu.html')
     
-@app.route("/clients")
+@client_routes.route("/clients")
 def show_all_clients():
     df = cli_manager.get_all_clients()
     html_table_button = df_html(df)
     return render_template_string(html_table_button)
     
-@app.route("/personals")
-def show_all_personals():
-    df = cli_manager.get_all_personals()
-    html_table_button = df_html(df)
-    return render_template_string(html_table_button)
+#@client_routes.route("/personals")
+#def show_all_personals():
+    #df = cli_manager.get_all_personals()
+    #html_table_button = df_html(df)
+    #return render_template_string(html_table_button)
 
-@app.route("/get-client/", methods=["GET", "POST"])
+@client_routes.route("/get-client/", methods=["GET", "POST"])
 def show_one_client():
     if request.method == "POST":
         client_name = request.form.get('client_name')
@@ -43,7 +44,7 @@ def show_one_client():
     else:
         return render_template('get_client_name.html')
 
-@app.route('/register-client', methods=["GET", "POST"])       
+@client_routes.route('/register-client', methods=["GET", "POST"])       
 def register_client():
     if request.method == 'GET':
         return render_template('register_client.html')
@@ -70,28 +71,28 @@ def register_client():
 
         if register_op:
             return f"""Cliente cadastrado com sucesso!
-                    <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
+                    <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
         else:
             return f"""Erro na operação!
-                    <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
+                    <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
 
-@app.route("/update_info/<client_name>", methods=["GET", "POST"])
+@client_routes.route("/update_info/<client_name>", methods=["GET", "POST"])
 def update_info(client_name):
     if request.method == "POST":
         updated = {key: value for key, value in request.form.items() if value}
-        return redirect(url_for("update", client_name=client_name, info=updated))
+        return redirect(url_for("api.client_routes.update", client_name=client_name, info=updated))
     else:
         return render_template('update_client.html')
 
-@app.route("/update-client/", methods=["GET", "POST"])
+@client_routes.route("/update-client/", methods=["GET", "POST"])
 def update_client():
     if request.method == "POST":
         client_name = request.form.get("client_name")
-        return redirect(url_for("update_info", client_name=client_name))
+        return redirect(url_for("api.client_routes.update_info", client_name=client_name))
     else:
         return render_template('get_client_name.html')
 
-@app.route("/update/<client_name>/<info>")
+@client_routes.route("/update/<client_name>/<info>")
 def update(client_name, info):
     client = cli_manager.get_client_by_name(client_name)
     info = ast.literal_eval(info)
@@ -112,27 +113,27 @@ def update(client_name, info):
     html_table_button = df_html(client)
     return render_template_string(html_table_button)
 
-@app.route('/delete-client', methods=["GET", "POST"])
+@client_routes.route('/delete-client', methods=["GET", "POST"])
 def delete_client():
     if request.method == "POST":
         client_name = request.form["client_name"]
         cli_manager.delete(client_name)
 
         return f"""Cliente deletado com sucesso!
-                    <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
+                    <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
     else:
         return render_template('get_client_name.html')
             
-@app.route('/select-personal/<client_name>', methods=["GET", "POST"])
+@client_routes.route('/select-personal/<client_name>', methods=["GET", "POST"])
 def select_personal(client_name):
     if request.method == "POST":
         personal_id = int(request.form.get('personal_id'))
-        return redirect(url_for("select_schedule", client_name=client_name, personal_id=personal_id))
+        return redirect(url_for("api.client_routes.select_schedule", client_name=client_name, personal_id=personal_id))
     else:
         all_personals = cli_manager.get_all_personals()
         return render_template("select_personal.html", client_name=client_name, all_personals=all_personals)
 
-@app.route('/select-schedule/<client_name>/<personal_id>', methods=["GET", "POST"])
+@client_routes.route('/select-schedule/<client_name>/<personal_id>', methods=["GET", "POST"])
 def select_schedule(client_name, personal_id):
     if request.method == "POST":
         schedule_id = request.form.getlist("schedule_index")
@@ -142,15 +143,18 @@ def select_schedule(client_name, personal_id):
 
         if appointment_op:
             return f"""Treino marcado com sucesso!
-                        <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
+                        <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
         else:
-            return f"""Erro!!!
-                        <a href="{ url_for('menu') }">Voltar ao Menu Principal</a>"""
+            return f"""Saldo insuficiente!!!
+                        <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
     else:
         schedule = cli_manager.get_available_schedule(personal_id)
+        if type(schedule) == None:
+            return f"""Erro!!!
+                        <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
         return render_template("select_schedule.html", client_name=client_name, personal_id=personal_id, schedule=schedule)
 
-@app.route('/make-appointment', methods=["GET", "POST"])
+@client_routes.route('/make-appointment', methods=["GET", "POST"])
 def make_appointment():
     if request.method == "POST":
         client_name = request.form.get("client_name")
@@ -158,13 +162,13 @@ def make_appointment():
         registered_personal_id = client.iloc[0]['personal_id']
 
         if not registered_personal_id:
-            return redirect(url_for("select_personal", client_name=client_name))
+            return redirect(url_for("api.client_routes.select_personal", client_name=client_name))
         else:
-            return redirect(url_for("select_schedule", client_name=client_name, personal_id=registered_personal_id))
+            return redirect(url_for("api.client_routes.select_schedule", client_name=client_name, personal_id=registered_personal_id))
     else:
         return render_template("get_client_name.html")
     
-@app.route('/appointments-clients/', methods=["GET", "POST"])
+@client_routes.route('/appointments-clients/', methods=["GET", "POST"])
 def show_appointment():
     if request.method == "POST":
         client_name = request.form.get('client_name')
@@ -182,7 +186,7 @@ def show_appointment():
     else:
         return render_template('get_client_name.html')
 
-@app.route("/workouts", methods=["GET", "POST"])
+@client_routes.route("/workouts", methods=["GET", "POST"])
 def show_client_workout():
     
     if request.method == "POST":
@@ -200,5 +204,5 @@ def show_client_workout():
     else:
         return render_template('get_client_name.html')
 
-if __name__ == '__main__':
-    app.run(debug=True)
+#if __name__ == '__main__':
+    #app.run(debug=True)

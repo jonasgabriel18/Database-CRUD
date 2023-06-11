@@ -6,14 +6,14 @@
 <body>
     <h1>Menu</h1>
     <ul>
-        <li><a href="{{ url_for('show_all_clients') }}">Mostrar clientes</a></li>
-        <li><a href="{{ url_for('show_one_client') }}">Mostrar um cliente</a></li>
-        <li><a href="{{ url_for('register_client')  }}">Registrar novo cliente</a></li>
-        <li><a href="{{ url_for('update_client')  }}">Atualizar cliente</a></li>
-        <li><a href="{{ url_for('delete_client')  }}">Deletar um cliente</a></li>
-        <li><a href="{{ url_for('make_appointment')  }}">Marcar um treino</a></li>
-        <li><a href="{{ url_for('show_appointment')  }}">Mostrar treinos marcados</a></li>
-        <li><a href="{{ url_for('show_client_workout')  }}">Mostrar exercícios</a></li>
+        <li><a href="{{ url_for('api.client_routes.show_all_clients') }}">Mostrar clientes</a></li>
+        <li><a href="{{ url_for('api.client_routes.show_one_client') }}">Mostrar um cliente</a></li>
+        <li><a href="{{ url_for('api.client_routes.register_client')  }}">Registrar novo cliente</a></li>
+        <li><a href="{{ url_for('api.client_routes.update_client')  }}">Atualizar cliente</a></li>
+        <li><a href="{{ url_for('api.client_routes.delete_client')  }}">Deletar um cliente</a></li>
+        <li><a href="{{ url_for('api.client_routes.make_appointment')  }}">Marcar um treino</a></li>
+        <li><a href="{{ url_for('api.client_routes.show_appointment')  }}">Mostrar treinos marcados</a></li>
+        <li><a href="{{ url_for('api.client_routes.show_client_workout')  }}">Mostrar exercícios</a></li>
     </ul>
 </body>
 </html>
