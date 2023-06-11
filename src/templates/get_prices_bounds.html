@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selecione a faixa de preço</title>
+</head>
+<body>
+    <h1> Faixa de preço</h1>
+
+    <form method="POST">
+        <label>Lower Bound:</label>
+        <input type="number" name="lower_bound" required><br>
+        <label>Upper Bound:</label>
+        <input type="number" name="upper_bound" required><br>
+        <input type="submit" value="Buscar">
+
+    </form>
+    <a href="{{ url_for('api.client_routes.menu') }}">Voltar ao Menu Principal</a>
+</body>
+</html>

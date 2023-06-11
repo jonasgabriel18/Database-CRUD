@@ -279,3 +279,49 @@ class ClientData(DataManager):
             op_result = op_result == op
         
         return op_result
+    
+    def get_personals_per_price(self, lower_bound=0, upper_bound=1000):
+        conn = self.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+        
+        cur = conn.cursor()
+
+        try:
+            select_personals_query = f"""SELECT * FROM personals p
+                                        WHERE p.price BETWEEN {lower_bound} AND {upper_bound}"""
+            
+            cur.execute(select_personals_query)
+            rows = cur.fetchall()
+
+            df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'age', 'height', 'weight', 'gym', 'from_mari'])
+
+            return df
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()
+    
+    def get_personals_from_mari(self):
+        conn = self.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+        
+        cur = conn.cursor()
+
+        try:
+            select_personals_query = f"""SELECT * FROM personals p
+                                        WHERE p.from_mari = true"""
+            
+            cur.execute(select_personals_query)
+            rows = cur.fetchall()
+
+            df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'age', 'height', 'weight', 'gym', 'from_mari'])
+
+            return df
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+        finally:
+            cur.close()
+            conn.close()

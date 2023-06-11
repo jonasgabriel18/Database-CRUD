@@ -186,5 +186,13 @@ def select_time(personal_name, day):
     else:
         return render_template('get_time.html')
 
-#if __name__ == '__main__':
-    #app.run(debug=True)
+@personal_routes.route("/personals-few-schedules")
+def get_personals_few_schedules():
+    df = per_manager.get_personals_few_availability()
+
+    if df.empty:
+        return f"""Não há personais com menos de 5 agendamentos!
+                <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
+
+    html_table_button = df_html_personal(df)
+    return render_template_string(html_table_button)

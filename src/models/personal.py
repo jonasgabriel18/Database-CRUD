@@ -83,52 +83,6 @@ class PersonalData(DataManager):
         finally:
             cur.close()
             conn.close()
-
-    def get_personals_per_price(self, lower_bound=0, upper_bound=1000):
-        conn = self.connect()
-        if not conn:
-            raise Exception("Erro na conexão com o database")
-        
-        cur = conn.cursor()
-
-        try:
-            select_personals_query = f"""SELECT * FROM personals p
-                                        WHERE p.price BETWEEN {lower_bound} AND {upper_bound}"""
-            
-            cur.execute(select_personals_query)
-            rows = cur.fetchall()
-
-            df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'age', 'height', 'weight', 'gym', 'from_mari'])
-
-            return df
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-        finally:
-            cur.close()
-            conn.close()
-    
-    def get_personals_from_mari(self):
-        conn = self.connect()
-        if not conn:
-            raise Exception("Erro na conexão com o database")
-        
-        cur = conn.cursor()
-
-        try:
-            select_personals_query = f"""SELECT * FROM personals p
-                                        WHERE p.from_mari = true"""
-            
-            cur.execute(select_personals_query)
-            rows = cur.fetchall()
-
-            df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'age', 'height', 'weight', 'gym', 'from_mari'])
-
-            return df
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-        finally:
-            cur.close()
-            conn.close()
     
     def get_personals_few_availability(self):
         conn = self.connect()
@@ -145,7 +99,18 @@ class PersonalData(DataManager):
                                         GROUP BY p.personal_id
                                         HAVING COUNT(ps.is_available) <= 5;"""
             
+            select_personals_without_schedules = """SELECT p.*, COUNT(ps.is_available)
+                                                    FROM personals p
+                                                    LEFT JOIN personals_schedules ps ON p.personal_id = ps.personal_id
+                                                    GROUP BY p.personal_id
+                                                    HAVING COUNT(ps.is_available) <= 5;"""
+
             cur.execute(select_personals_query)
+            #rows = cur.fetchall()
+
+            #df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'age', 'height', 'weight', 'gym', 'from_mari', 'qtd_schedules'])
+
+            cur.execute(select_personals_without_schedules)
             rows = cur.fetchall()
 
             df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'age', 'height', 'weight', 'gym', 'from_mari', 'qtd_schedules'])

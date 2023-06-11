@@ -204,5 +204,31 @@ def show_client_workout():
     else:
         return render_template('get_client_name.html')
 
-#if __name__ == '__main__':
-    #app.run(debug=True)
+@client_routes.route("/personals-between", methods=["GET", "POST"])
+def get_personals_price_range():
+    if request.method == "POST":
+        lower_bound = int(request.form.get('lower_bound'))
+        upper_bound = int(request.form.get('upper_bound'))
+
+        df = cli_manager.get_personals_per_price(lower_bound, upper_bound)
+
+        if df.empty:
+            return f"""Não existem personais nessa faixa de preço!
+                        <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
+        
+        html_table_button = df_html(df)
+
+        return render_template_string(html_table_button)
+    else:
+        return render_template('get_prices_bounds.html')
+
+@client_routes.route("/personals-from-mari")
+def get_personals_from_mari():
+    df = cli_manager.get_personals_from_mari()
+
+    if df.empty:
+        return f"""Não existem personais de Mari!
+                    <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
+    
+    html_table_button = df_html(df)
+    return render_template_string(html_table_button)
