@@ -93,7 +93,7 @@ class DataManager():
             cur.execute(select_query)
             rows = cur.fetchall()
 
-            df = pd.DataFrame(rows, columns=['gym_id', 'name', 'address', 'opening_time', 'closing_time', 'fee']).set_index('gym_id')
+            df = pd.DataFrame(rows, columns=['id', 'name', 'address', 'opening_time', 'closing_time', 'fee'])
             
             return df
         except (Exception, psycopg2.DatabaseError) as error:

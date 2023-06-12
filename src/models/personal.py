@@ -73,10 +73,12 @@ class PersonalData(DataManager):
         try:
             personal = self.get_personal_by_name(personal_name)
             if personal.empty:
-                return Exception("ID do personal retornou vazio")
+                return False
+            
             personal_id = personal.iloc[0]['id']
 
             delete_query = f"DELETE FROM personals WHERE personal_id = {personal_id}"
+            print(delete_query)
             cur.execute(delete_query)
             conn.commit()
             return True
@@ -156,9 +158,6 @@ class PersonalData(DataManager):
             conn.close()
     
     def get_personal_schedules(self, personal_name):
-        personal = self.get_personal_by_name(personal_name)
-        personal_id = personal.iloc[0]['id']
-
         conn = self.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
@@ -166,6 +165,13 @@ class PersonalData(DataManager):
         cur = conn.cursor()
 
         try:
+            personal = self.get_personal_by_name(personal_name)
+
+            if personal.empty:
+                return pd.DataFrame(), False
+            
+            personal_id = personal.iloc[0]['id']
+            
             get_available_schedule_query = f"SELECT * FROM personals_schedules WHERE personal_id={personal_id};"
             cur.execute(get_available_schedule_query)
             available_schedule = cur.fetchall()
@@ -173,19 +179,17 @@ class PersonalData(DataManager):
             df_schedule = pd.DataFrame(available_schedule, columns=['id', 'time', 'day', 'availability', 'personal_id']).set_index('id')
 
             if df_schedule.empty:
-                raise Exception("O personal não possui horários livres")
+                return pd.DataFrame(), False
 
-            return df_schedule
+            return df_schedule, True
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
+            return pd.DataFrame(), False
         finally:
             cur.close()
             conn.close()
     
     def get_personal_appointments(self, personal_name):
-        personal = self.get_personal_by_name(personal_name)
-        personal_id = personal.iloc[0]['id']
-
         conn = self.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
@@ -193,6 +197,8 @@ class PersonalData(DataManager):
         cur = conn.cursor()
 
         try:
+            personal = self.get_personal_by_name(personal_name)
+            personal_id = personal.iloc[0]['id']
             get_appointments_query = f"""SELECT p.personal_name, c.client_name, ca.appointment_day, ca.appointment_time
                                         FROM personals p
                                         LEFT JOIN clients c ON c.personal_id = p.personal_id
@@ -205,19 +211,17 @@ class PersonalData(DataManager):
             df_schedule = pd.DataFrame(available_schedule, columns=['name', 'client', 'day', 'time'])
 
             if df_schedule.empty:
-                raise Exception("O personal não possui treinos marcados")
+                return pd.DataFrame(), False
 
-            return df_schedule
+            return (df_schedule, True)
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
+            return pd.DataFrame(), False
         finally:
             cur.close()
             conn.close()
     
     def get_personal_stats(self, personal_name):
-        personal = self.get_personal_by_name(personal_name)
-        personal_id = personal.iloc[0]['id']
-
         conn = self.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
@@ -225,6 +229,8 @@ class PersonalData(DataManager):
         cur = conn.cursor()
 
         try:
+            personal = self.get_personal_by_name(personal_name)
+            personal_id = personal.iloc[0]['id']
             get_stats_query = f"""SELECT p.personal_name, s.*
                                 FROM personals p
                                 LEFT JOIN personal_statistics s ON p.personal_id = s.personal_id
@@ -237,19 +243,17 @@ class PersonalData(DataManager):
             df_stats.drop(['s_id', 'p_id'], axis=1, inplace=True)
 
             if df_stats.empty:
-                raise Exception("O personal não possui treinos marcados")
+                return pd.DataFrame(), False
 
-            return df_stats
+            return df_stats, True
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
+            return pd.DataFrame(), False
         finally:
             cur.close()
             conn.close()
     
     def add_schedule_time(self, personal_name, day, time):
-        personal = self.get_personal_by_name(personal_name)
-        personal_id = personal.iloc[0]['id'].item()
-
         conn = self.connect()
         if not conn:
             raise Exception("Erro na conexão com o database")
@@ -257,6 +261,9 @@ class PersonalData(DataManager):
         cur = conn.cursor()
 
         try:
+            personal = self.get_personal_by_name(personal_name)
+            personal_id = personal.iloc[0]['id'].item()
+
             insert_schedule_query = """INSERT INTO personals_schedules (schedule_time, schedule_day, is_available, personal_id)
                                         VALUES (%s,%s,%s,%s)"""
             

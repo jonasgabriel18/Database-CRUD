@@ -20,12 +20,16 @@
         <input type="number" name="height" required><br>
         <label>Preço do treino</label>
         <input type="number" name="price" required><br>
-        <label>ID da sua academia</label>
-        <input type="number" name="gym_id" required><br>
+        {% for index, row in gyms.iterrows() %}
+            <input type="radio" name="gym_id" value="{{ row['id'] }}" required> 
+            {{ row['name'] }}, {{ row['address'] }} <br>
+        {% endfor %}
+        <br>
         <label>É de Mari?</label>
         <input type="checkbox" name="from_mari" checked><br>
         <input type="submit" value="Registrar">
 
     </form>
+    <a href="{{ url_for('api.personal_routes.menu') }}">Voltar ao Menu Principal</a>
 </body>
 </html>

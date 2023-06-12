@@ -54,7 +54,8 @@ def show_one_personal():
 @personal_routes.route('/register-personal', methods=["GET", "POST"])       
 def register_personal():
     if request.method == 'GET':
-        return render_template('register_personal.html')
+        gyms = per_manager.get_all_gyms()
+        return render_template('register_personal.html', gyms=gyms)
     elif request.method == 'POST':
 
         name = request.form.get('name')
@@ -62,6 +63,7 @@ def register_personal():
         weight = int(request.form.get('weight'))
         height = int(request.form.get('height'))
         price = int(request.form.get('price'))
+        print(request.form.get('gym_id'))
         gym_id = int(request.form.get('gym_id'))
         from_mari = request.form.get('from_mari') == 'on'
 
@@ -78,8 +80,8 @@ def register_personal():
             return f"""Erro na operação!
                     #<a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
 
-@personal_routes.route("/update_info/<personal_name>", methods=["GET", "POST"])
-def update_info(personal_name):
+@personal_routes.route("/update-info/<personal_name>", methods=["GET", "POST"])
+def update_per_info(personal_name):
     if request.method == "POST":
         updated = {key: value for key, value in request.form.items() if value}
         return redirect(url_for("api.personal_routes.update", personal_name=personal_name, info=updated))
@@ -90,7 +92,7 @@ def update_info(personal_name):
 def update_personal():
     if request.method == "POST":
         personal_name = request.form.get("personal_name")
-        return redirect(url_for("api.personal_routes.update_info", personal_name=personal_name))
+        return redirect(url_for("api.personal_routes.update_per_info", personal_name=personal_name))
     else:
         return render_template('get_personal_name.html')
 
@@ -137,9 +139,9 @@ def delete_personal():
 def schedule_personal():
     if request.method == "POST":
         personal_name = request.form["personal_name"]
-        schedule = per_manager.get_personal_schedules(personal_name)
-
-        if schedule.empty:
+        schedule, op = per_manager.get_personal_schedules(personal_name)
+        
+        if type(schedule) == None or not op:
             return f"""Personal ainda não definiu seus horários!
                     <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
 
@@ -152,10 +154,10 @@ def schedule_personal():
 def appointments_personal():
     if request.method == "POST":
         personal_name = request.form["personal_name"]
-        schedule = per_manager.get_personal_appointments(personal_name)
+        schedule, op = per_manager.get_personal_appointments(personal_name)
 
-        if schedule.empty:
-            return f"""Personal não possui agendamentos!
+        if schedule.empty or op:
+            return f"""Nome inválido ou o personal não possui agendamentos!
                     <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
         
         df_sched = df_html_personal(schedule)
@@ -167,7 +169,12 @@ def appointments_personal():
 def personal_statistics():
     if request.method == "POST":
         personal_name = request.form.get("personal_name")
-        stats = per_manager.get_personal_stats(personal_name)
+        stats, op = per_manager.get_personal_stats(personal_name)
+
+        if stats.empty or op:
+            return f"""Nome inválido ou o personal não possui agendamentos!
+                    <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
+
         df_stats = df_html_personal(stats)
         return render_template_string(df_stats)
     else:
@@ -177,6 +184,12 @@ def personal_statistics():
 def insert_schedule():
     if request.method == "POST":
         personal_name = request.form.get("personal_name")
+        personal = per_manager.get_personal_by_name(personal_name)
+
+        if personal.empty:
+            return f"""Personal não encontrado!
+                        <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
+
         return redirect(url_for('api.personal_routes.select_day', personal_name=personal_name))
     else:
         return render_template('get_personal_name.html')
