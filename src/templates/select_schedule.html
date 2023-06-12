@@ -6,7 +6,10 @@
 <body>
     <h1>Selecionar Horário</h1>
     <p>Cliente: {{ client_name }}</p>
-    <p>Personal Trainer ID: {{ personal_id }}</p>
+    <p>Saldo atual: R${{ balance }}</p>
+
+    <p>Personal Trainer: {{ personal_name }}</p>
+    <p>Custo de cada treino: R${{price}}</p>
     
     <h2>Horários Disponíveis:</h2>
     <form method="POST" action="{{ url_for('api.client_routes.select_schedule', client_name=client_name, personal_id=personal_id) }}">

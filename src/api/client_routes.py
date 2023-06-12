@@ -90,6 +90,11 @@ def update(client_name, info):
     client = cli_manager.get_client_by_name(client_name)
     info = ast.literal_eval(info)
 
+    for value in info.values():
+        if value[0] == '-':
+            return f"""Valores negativos não são permitidos!
+                    <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
+
     booleans_info = {
         'is_flamengo': info.get('is_flamengo', 'off') == 'on',
         'from_souza': info.get('from_souza', 'off') == 'on',
@@ -116,7 +121,7 @@ def delete_client():
             return f"""Cliente deletado com sucesso!
                     <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
         else:
-            return f"""Não foi possível deletar o cliente!
+            return f"""Não foi possível deletar o cliente! Nome inválido ou ele não existe
                     <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
     else:
         return render_template('get_client_name.html')
@@ -125,7 +130,12 @@ def delete_client():
 def select_personal(client_name):
     if request.method == "POST":
         personal_id = int(request.form.get('personal_id'))
-        return redirect(url_for("api.client_routes.select_schedule", client_name=client_name, personal_id=personal_id))
+        personal = cli_manager.get_personal_by_id(personal_id)
+        personal_name = personal.iloc[0]['name']
+        personal_price = personal.iloc[0]['price']
+        balance = cli_manager.get_client_by_name(client_name).iloc[0]['balance']
+        return redirect(url_for("api.client_routes.select_schedule", client_name=client_name, personal_id=personal_id, personal_name=personal_name,
+                                balance=balance, price=personal_price))
     else:
         all_personals = cli_manager.get_all_personals()
         return render_template("select_personal.html", client_name=client_name, all_personals=all_personals)
@@ -146,10 +156,17 @@ def select_schedule(client_name, personal_id):
                         <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
     else:
         schedule = cli_manager.get_available_schedule(personal_id)
+        personal = cli_manager.get_personal_by_id(personal_id)
+        personal_name = personal.iloc[0]['name']
+        personal_price = personal.iloc[0]['price']
+        balance = cli_manager.get_client_by_name(client_name).iloc[0]['balance']
+
         if type(schedule) == None:
             return f"""Erro!!!
                         <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
-        return render_template("select_schedule.html", client_name=client_name, personal_id=personal_id, schedule=schedule)
+        
+        return render_template("select_schedule.html", client_name=client_name, personal_id=personal_id, schedule=schedule, 
+                               personal_name=personal_name, balance=balance, price=personal_price)
 
 @client_routes.route('/make-appointment', methods=["GET", "POST"])
 def make_appointment():
@@ -161,7 +178,8 @@ def make_appointment():
         if not registered_personal_id:
             return redirect(url_for("api.client_routes.select_personal", client_name=client_name))
         else:
-            return redirect(url_for("api.client_routes.select_schedule", client_name=client_name, personal_id=registered_personal_id))
+            personal_name = cli_manager.get_personal_by_id(registered_personal_id).iloc[0]['name']
+            return redirect(url_for("api.client_routes.select_schedule", client_name=client_name, personal_id=registered_personal_id, personal_name=personal_name))
     else:
         return render_template("get_client_name.html")
     
