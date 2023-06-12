@@ -40,6 +40,11 @@ def show_one_personal():
     if request.method == "POST":
         personal_name = request.form.get('personal_name')
         personal = per_manager.get_personal_by_name(personal_name)
+
+        if personal.empty:
+            return f"""Não foi encontrado nenhum personal com esse nome!
+                    <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
+
         html_table_button = df_html_personal(personal)
         
         return render_template_string(html_table_button)
@@ -102,7 +107,12 @@ def update(personal_name, info):
     
     personal_id = personal.iloc[0]['id']
 
-    per_manager.update(personal_id, list(info.keys()), list(info.values()))
+    op = per_manager.update(personal_id, list(info.keys()), list(info.values()))
+
+    if not op:
+        return f"""Não foi possível atualizar os dados!
+                    <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
+    
     personal = per_manager.get_personal_by_id(personal_id)
         
     html_table_button = df_html_personal(personal)
@@ -112,9 +122,13 @@ def update(personal_name, info):
 def delete_personal():
     if request.method == "POST":
         personal_name = request.form["personal_name"]
-        per_manager.delete(personal_name)
+        op = per_manager.delete(personal_name)
 
-        return f"""Personal deletado com sucesso!
+        if not op:
+            return f"""Não foi encontrado nenhum personal com esse nome!
+                    <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
+        else:
+            return f"""Personal deletado com sucesso!
                     #<a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
     else:
         return render_template('get_personal_name.html')
@@ -179,9 +193,13 @@ def select_day(personal_name):
 def select_time(personal_name, day):
     if request.method == "POST":
         time = request.form.get('time')
-        per_manager.add_schedule_time(personal_name, day, time)
+        op = per_manager.add_schedule_time(personal_name, day, time)
 
-        return f"""Horário marcado com sucesso!
+        if op:
+            return f"""Horário marcado com sucesso!
+                    <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
+        else:
+            return f"""Não foi possível marcar esse horário!
                     <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
     else:
         return render_template('get_time.html')

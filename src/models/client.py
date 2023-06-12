@@ -177,9 +177,11 @@ class ClientData(DataManager):
             delete_query = f"DELETE FROM clients WHERE client_id = {client_id}"
             cur.execute(delete_query)
             conn.commit()
+            return True
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             conn.rollback()
+            return False
         finally:
             cur.close()
             conn.close()

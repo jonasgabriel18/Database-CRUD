@@ -54,9 +54,11 @@ class PersonalData(DataManager):
             
             cur.execute(update_personal_query)
             conn.commit()
+            return True
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             conn.rollback()
+            return False
         finally:
             cur.close()
             conn.close()
@@ -77,9 +79,11 @@ class PersonalData(DataManager):
             delete_query = f"DELETE FROM personals WHERE personal_id = {personal_id}"
             cur.execute(delete_query)
             conn.commit()
+            return True
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
             conn.rollback()
+            return False
         finally:
             cur.close()
             conn.close()
@@ -258,8 +262,11 @@ class PersonalData(DataManager):
             
             cur.execute(insert_schedule_query, (time, day, True, personal_id))
             conn.commit()
+            return True
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
+            conn.rollback()
+            return False
         finally:
             cur.close()
             conn.close()

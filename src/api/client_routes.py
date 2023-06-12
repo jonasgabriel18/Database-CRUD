@@ -13,7 +13,6 @@ from src.models.client import ClientData
 from flask import Flask, request, render_template, redirect, url_for, flash, render_template_string, Blueprint
 
 template_dir = os.path.abspath('../templates')
-#app = Flask(__name__, template_folder=template_dir)
 client_routes = Blueprint('client_routes', __name__)
 cli_manager = ClientData()
     
@@ -26,18 +25,17 @@ def show_all_clients():
     df = cli_manager.get_all_clients()
     html_table_button = df_html(df)
     return render_template_string(html_table_button)
-    
-#@client_routes.route("/personals")
-#def show_all_personals():
-    #df = cli_manager.get_all_personals()
-    #html_table_button = df_html(df)
-    #return render_template_string(html_table_button)
 
 @client_routes.route("/get-client/", methods=["GET", "POST"])
 def show_one_client():
     if request.method == "POST":
         client_name = request.form.get('client_name')
         client = cli_manager.get_client_by_name(client_name)
+
+        if client.empty:
+            return f"""Não foi encontrado nenhum client com esse nome!
+                    <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
+
         html_table_button = df_html(client)
         
         return render_template_string(html_table_button)
@@ -58,14 +56,9 @@ def register_client():
         from_souza = request.form.get('from_souza') == 'on'
         watch_one_piece = request.form.get('watch_one_piece') == 'on'
 
-        if age < 0:
-            raise Exception("Idade não pode ser negativa")
-
-        if weight < 0:
-            raise Exception("Peso não pode ser negativo")
-
-        if height < 0:
-            raise Exception("Altura não pode ser negativa")
+        if age < 0 or weight <= 0 or weight <= 0:
+            return f"""Valores negativos não são permitidos!
+                    #<a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
         
         register_op = cli_manager.register(name, age, weight, height, balance, is_flamengo, from_souza, watch_one_piece)
 
@@ -117,9 +110,13 @@ def update(client_name, info):
 def delete_client():
     if request.method == "POST":
         client_name = request.form["client_name"]
-        cli_manager.delete(client_name)
+        op = cli_manager.delete(client_name)
 
-        return f"""Cliente deletado com sucesso!
+        if op:
+            return f"""Cliente deletado com sucesso!
+                    <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
+        else:
+            return f"""Não foi possível deletar o cliente!
                     <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
     else:
         return render_template('get_client_name.html')
@@ -178,7 +175,8 @@ def show_appointment():
         df = cli_manager.get_all_appointments(client_id)
 
         if df.empty:
-            flash('Aluno não possui treinos marcados!')
+            return f"""Cliente não possui treinos marcados!
+                    <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
 
         html_table_button = df_html(df)
         
@@ -196,7 +194,8 @@ def show_client_workout():
 
         df = cli_manager.get_all_workouts(client_id)
         if df.empty:
-            flash('Aluno não possui treinos marcados!')
+            return f"""Cliente não possui exercícios!
+                    <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
 
         html_table_button = df_html(df)
         
