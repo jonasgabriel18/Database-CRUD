@@ -214,6 +214,9 @@ class ClientData(DataManager):
             search_exercises_query = f"SELECT * FROM clients c JOIN exercises e ON c.client_id = e.client_id WHERE c.client_id={client_id};"
             cur.execute(search_exercises_query)
             rows = cur.fetchall()
+
+            stored_procedure = "call updatestatistics(%s,%s)"
+            cur.execute(stored_procedure, (personal_id, cost_per_appointment))
             
             if not rows:
                 exercises = random_workout_generator()

@@ -106,9 +106,6 @@ class PersonalData(DataManager):
                                                     HAVING COUNT(ps.is_available) <= 5;"""
 
             cur.execute(select_personals_query)
-            #rows = cur.fetchall()
-
-            #df = pd.DataFrame(rows, columns=['id', 'name', 'price', 'age', 'height', 'weight', 'gym', 'from_mari', 'qtd_schedules'])
 
             cur.execute(select_personals_without_schedules)
             rows = cur.fetchall()
