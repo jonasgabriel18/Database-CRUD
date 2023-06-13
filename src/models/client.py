@@ -212,6 +212,9 @@ class ClientData(DataManager):
             
             update_client_query = "UPDATE clients SET personal_id = %s, gym_id = %s WHERE client_id = %s"
             cur.execute(update_client_query, (int(personal_id), personal.iloc[0]['gym'].item(), client_id))
+
+            update_balance_query = f"UPDATE clients SET balance = balance - {cost_per_appointment} WHERE client_id={client_id};"
+            cur.execute(update_balance_query)
             
             search_exercises_query = f"SELECT * FROM clients c JOIN exercises e ON c.client_id = e.client_id WHERE c.client_id={client_id};"
             cur.execute(search_exercises_query)
@@ -238,45 +241,28 @@ class ClientData(DataManager):
             conn.close()
     
     def insert_appointments(self, client_name, personal_id, schedule_indexes, payment_method):
-        conn = self.connect()
-        if not conn:
-            return None
-        cur = conn.cursor()
+        client = self.get_client_by_name(client_name)
+        personal = self.get_personal_by_id(personal_id)
+        client_id = client.iloc[0]['id'].item()
 
-        try:
-            client = self.get_client_by_name(client_name)
-            personal = self.get_personal_by_id(personal_id)
-            client_id = client.iloc[0]['id']
+        balance = client.iloc[0]['balance'].item()
+        price = personal.iloc[0]['price'].item()
 
-            balance = client.iloc[0]['balance']
-            price = personal.iloc[0]['price']
+        total_cost = len(schedule_indexes) * price
 
-            total_cost = len(schedule_indexes) * price
-
-            if client.iloc[0]['is_flamengo']:
-                total_cost *= 0.95
+        if client.iloc[0]['is_flamengo']:
+            total_cost *= 0.95
             
-            if client.iloc[0]['from_souza']:
-                total_cost *= 0.95
+        if client.iloc[0]['from_souza']:
+            total_cost *= 0.95
             
-            if client.iloc[0]['watch_one_piece']:
-                total_cost *= 0.95
+        if client.iloc[0]['watch_one_piece']:
+            total_cost *= 0.95
 
-            if total_cost > balance:
-                return False
-            
-            new_balance = balance - total_cost
-            cost_per_appointment = total_cost//len(schedule_indexes)
-            update_balance_query = f"UPDATE clients SET balance = {new_balance} WHERE client_id={client_id};"
-            cur.execute(update_balance_query)
-            conn.commit()
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-            conn.rollback()
+        if total_cost > balance:
             return False
-        finally:
-            cur.close()
-            conn.close()
+            
+        cost_per_appointment = total_cost//len(schedule_indexes)
 
         op_result = True
         for schedule_id in schedule_indexes:

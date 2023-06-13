@@ -14,7 +14,34 @@ class PersonalData(DataManager):
         try:
             register_query = """INSERT INTO personals(personal_name, price, age, height, weight, gym_id, from_mari)
                                 VALUES (%s,%s,%s,%s,%s,%s,%s)"""
+            
             cur.execute(register_query, (name, price, age, height, weight, gym_id, from_mari))
+            conn.commit()
+            self.create_stats_row(name)
+
+            return True
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+            conn.rollback()
+            return False
+        finally:
+            cur.close()
+            conn.close()
+
+    def create_stats_row(self, personal_name):
+        conn = self.connect()
+        if not conn:
+            raise Exception("Erro na conexão com o database")
+        
+        cur = conn.cursor()
+
+        try:
+            personal_id = self.get_personal_by_name(personal_name).iloc[0]['id'].item()
+
+            stats_query = f"""INSERT INTO personal_statistics (personal_id, qtd_clients, qtd_workouts, balance)
+                                VALUES ({personal_id}, 0, 0, 0)"""
+            
+            cur.execute(stats_query)
             conn.commit()
 
             return True
@@ -78,7 +105,7 @@ class PersonalData(DataManager):
             personal_id = personal.iloc[0]['id']
 
             delete_query = f"DELETE FROM personals WHERE personal_id = {personal_id}"
-            print(delete_query)
+            
             cur.execute(delete_query)
             conn.commit()
             return True

@@ -10,6 +10,13 @@
         .titulo {
             text-align: center;
         }
+
+        .imagem {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            width: 50%;
+        }
     </style>
 </head>
 <body>
@@ -18,6 +25,6 @@
         <li><a href="{{ url_for('api.client_routes.menu') }}">Entrar como cliente</a></li>
         <li><a href="{{ url_for('api.personal_routes.menu') }}">Entrar como personal</a></li>
     </ul>
-    <img src="{{ url_for('static', filename='logo.gif') }}">
+    <img class="imagem" src="{{ url_for('static', filename='logo.gif') }}">
 </body>
 </html>

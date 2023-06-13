@@ -63,7 +63,6 @@ def register_personal():
         weight = int(request.form.get('weight'))
         height = int(request.form.get('height'))
         price = int(request.form.get('price'))
-        print(request.form.get('gym_id'))
         gym_id = int(request.form.get('gym_id'))
         from_mari = request.form.get('from_mari') == 'on'
 
@@ -171,7 +170,7 @@ def personal_statistics():
         personal_name = request.form.get("personal_name")
         stats, op = per_manager.get_personal_stats(personal_name)
 
-        if stats.empty or op:
+        if stats.empty or not op:
             return f"""Nome inválido ou o personal não possui agendamentos!
                     <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
 
@@ -222,7 +221,7 @@ def get_personals_few_schedules():
     df = per_manager.get_personals_few_availability()
 
     if df.empty:
-        return f"""Não há personais com menos de 5 agendamentos!
+        return f"""Não há personais com menos de 5 horários livres!
                 <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
 
     html_table_button = df_html_personal(df)
