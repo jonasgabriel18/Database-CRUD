@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Menu</title>
+    <title>Acadetinder</title>
     <style>
         li a:visited {
         color: #1600df;
         }
+
+        .titulo {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h1>Menu</h1>
+    <h1 class="titulo">Acadetinder</h1>
     <ul>
         <li><a href="{{ url_for('api.client_routes.menu') }}">Entrar como cliente</a></li>
         <li><a href="{{ url_for('api.personal_routes.menu') }}">Entrar como personal</a></li>
     </ul>
+    <img src="{{ url_for('static', filename='logo.gif') }}">
 </body>
 </html>

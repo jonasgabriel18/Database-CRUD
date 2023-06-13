@@ -6,10 +6,14 @@
         li a:visited {
         color: #1600df;
         }
+
+        .titulo {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h1>Menu</h1>
+    <h1 class="titulo" >Alunos</h1>
     <ul>
         <li><a href="{{ url_for('api.client_routes.show_all_clients') }}">Mostrar clientes</a></li>
         <li><a href="{{ url_for('api.client_routes.show_one_client') }}">Mostrar um cliente</a></li>

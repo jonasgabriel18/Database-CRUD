@@ -6,10 +6,13 @@
         li a:visited {
         color: #1600df;
         }
+        .titulo {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h1>Menu</h1>
+    <h1 class="titulo">Personais Trainers</h1>
     <ul>
         <li><a href="{{ url_for('api.personal_routes.show_all_personals') }}" >Mostrar todos os personais</a></li>
         <li><a href="{{ url_for('api.personal_routes.show_all_gyms') }}">Mostrar todas as academias</a></li>

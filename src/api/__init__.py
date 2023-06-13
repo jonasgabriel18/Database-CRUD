@@ -14,8 +14,9 @@ api_blueprint.register_blueprint(client_routes)
 api_blueprint.register_blueprint(personal_routes)
 
 template_dir = os.path.abspath('../templates')
+static_dir = os.path.abspath('../static')
 
-app = Flask(__name__, template_folder=template_dir)
+app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.register_blueprint(api_blueprint)
 
 @app.route('/')
