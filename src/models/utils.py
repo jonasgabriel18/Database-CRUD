@@ -1,5 +1,7 @@
 import random
 from random import randrange
+import pandas as pd
+from flask import url_for
 
 def random_workout_generator():
     peitoral = ['Supino Reto com halter', 'Supino reto com barra', 'Supino Inclinado com halter', 'Supino inclinado com barra',
@@ -101,3 +103,19 @@ def random_workout_generator():
         workout.append(exercise)
 
     return workout
+
+def df_html(df):
+    html_df = df.to_html()
+    html_table_button = f"""
+                        {html_df}
+                        <a href="{ url_for('api.client_routes.menu') }">Voltar ao Menu Principal</a>"""
+    
+    return html_table_button
+
+def df_html_personal(df):
+    html_df = df.to_html()
+    html_table_button = f"""
+                        {html_df}
+                        <a href="{ url_for('api.personal_routes.menu') }">Voltar ao Menu Principal</a>"""
+    
+    return html_table_button

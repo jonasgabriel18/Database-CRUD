@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Menu</title>
+    <style>
+        li a:visited {
+        color: #1600df;
+        }
+        .titulo {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="titulo">Personais Trainers</h1>
+    <ul>
+        <li><a href="{{ url_for('api.personal_routes.show_all_personals') }}" >Mostrar todos os personais</a></li>
+        <li><a href="{{ url_for('api.personal_routes.show_all_gyms') }}">Mostrar todas as academias</a></li>
+        <li><a href="{{ url_for('api.personal_routes.show_one_personal') }}">Mostrar um personal</a></li>
+        <li><a href="{{ url_for('api.personal_routes.get_personals_few_schedules')  }}">Mostrar personais com menos de 5 agendamentos</a></li>
+        <li><a href="{{ url_for('api.personal_routes.register_personal') }}">Registrar novo personal</a></li>
+        <li><a href="{{ url_for('api.personal_routes.update_personal') }}">Atualizar personal</a></li>
+        <li><a href="{{ url_for('api.personal_routes.delete_personal')  }}">Deletar personal</a></li>
+        <li><a href="{{ url_for('api.personal_routes.appointments_personal')  }}">Treinos marcados</a></li>
+        <li><a href="{{ url_for('api.personal_routes.insert_schedule')  }}">Adicionar horário livre</a></li>
+        <li><a href="{{ url_for('api.personal_routes.schedule_personal')  }}">Horário do personal</a></li>
+        <li><a href="{{ url_for('api.personal_routes.personal_statistics')  }}">Estatísticas do personal</a></li>
+        <li><a href="{{ url_for('main_menu')  }}">Sair</a></li>
+    </ul>
+</body>
+</html>

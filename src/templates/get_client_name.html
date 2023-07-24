@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Nome</title>
+  </head>
+  <body>
+    <h1>Seu nome</h1>
+    <form method="POST">
+      <label for="client_name">Nome do Cliente:</label>
+      <input type="text" id="client_name" name="client_name" required>
+      <input type="submit" value="Buscar">
+    </form>
+    <a href="{{ url_for('api.client_routes.menu') }}">Voltar ao Menu Principal</a>
+  </body>
+</html>

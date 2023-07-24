@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Selecionar Horário</title>
+</head>
+<body>
+    <h1>Selecionar Horário</h1>
+    <p>Cliente: {{ client_name }}</p>
+    <p>Saldo atual: R${{ balance }}</p>
+
+    <p>Personal Trainer: {{ personal_name }}</p>
+    <p>Custo de cada treino: R${{price}}</p>
+    
+    <h2>Horários Disponíveis:</h2>
+    <form method="POST" action="{{ url_for('api.client_routes.select_schedule', client_name=client_name, personal_id=personal_id) }}">
+        {% for index, row in schedule.iterrows() %}
+            <input type="checkbox" name="schedule_index" value="{{ row['id'] }}" > 
+            {{ row['time'] }} - {{ row['day'] }} <br>
+        {% endfor %}
+        <br>
+        <h2>Forma de Pagamento:</h2>
+        <label>
+            <input type="radio" name="payment_method" value="cartao"> Cartão
+        </label>
+        <label>
+            <input type="radio" name="payment_method" value="boleto"> Boleto
+        </label>
+        <label>
+            <input type="radio" name="payment_method" value="pix"> Pix
+        </label>
+        <label>
+            <input type="radio" name="payment_method" value="berries"> Berries
+        </label>
+        <br>
+        <input type="submit" value="Selecionar">
+    </form>
+
+    <a href="{{ url_for('api.client_routes.menu') }}">Voltar ao Menu Principal</a>
+</body>
+</html>

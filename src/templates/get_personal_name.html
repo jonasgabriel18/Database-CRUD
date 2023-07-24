@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Nome do Personal</title>
+  </head>
+  <body>
+    <h1>Nome do Personal</h1>
+    <form method="POST">
+      <label for="personal_name">Nome do Personal:</label>
+      <input type="text" id="personal_name" name="personal_name" required>
+      <input type="submit" value="Buscar">
+    </form>
+    <a href="{{ url_for('api.personal_routes.menu') }}">Voltar ao Menu Principal</a>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atualizar</title>
+</head>
+<body>
+    <h1> Atualizar</h1>
+
+    <form method="POST">
+        <label>Novo nome:</label>
+        <input type="text" name="name"><br>
+        <label>Nova idade:</label>
+        <input type="number" name="age"><br>
+        <label>Novo peso (kg):</label>
+        <input type="number" name="weight"><br>
+        <label>Nova altura (cm):</label>
+        <input type="number" name="height"><br>
+        <label>Novo preço</label>
+        <input type="number" name="price"><br>
+        <label>É de Mari?</label>
+        <input type="checkbox" name="from_mari" checked><br>
+        <input type="submit" value="Atualizar">
+
+    </form>
+    <a href="{{ url_for('api.personal_routes.menu') }}">Voltar ao Menu Principal</a>
+</body>
+</html>

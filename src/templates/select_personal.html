@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Selecionar Personal Trainer</title>
+</head>
+<body>
+    <h1>Selecionar Personal Trainer</h1>
+    <p>Cliente: {{ client_name }}</p>
+    
+    <h2>Horários Disponíveis:</h2>
+    <form method="POST" action="{{ url_for('api.client_routes.select_personal', client_name=client_name, all_personals=all_personals) }}">
+        {% for index, row in all_personals.iterrows() %}
+            <input type="radio" name="personal_id" value="{{ row['id'] }}"> 
+            {{ row['name'] }} <br>
+        {% endfor %}
+        <br>
+        <input type="submit" value="Selecionar">
+    </form>
+    <a href="{{ url_for('api.client_routes.menu') }}">Voltar ao Menu Principal</a>
+</body>
+</html>

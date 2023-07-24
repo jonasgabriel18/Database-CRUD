@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar novo client!!!!!!</title>
+</head>
+<body>
+    <h1> Registro</h1>
+
+    <form method="POST">
+        <label>Nome:</label>
+        <input type="text" name="name" required><br>
+        <label>Idade:</label>
+        <input type="number" name="age" required><br>
+        <label>Peso (kg):</label>
+        <input type="number" name="weight" required><br>
+        <label>Altura:</label>
+        <input type="number" name="height" required><br>
+        <label>Saldo atual</label>
+        <input type="number" name="balance" required><br>
+        <label>É flamenguista?</label>
+        <input type="checkbox" name="is_flamengo" checked><br>
+        <label>É de Souza?</label>
+        <input type="checkbox" name="from_souza" checked><br>
+        <label>Assiste One Piece?</label>
+        <input type="checkbox" name="watch_one_piece" checked><br>
+        <input type="submit" value="Registrar">
+
+    </form>
+    <a href="{{ url_for('api.client_routes.menu') }}">Voltar ao Menu Principal</a>
+</body>
+</html>
